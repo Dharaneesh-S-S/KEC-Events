@@ -8,7 +8,7 @@ const Navbar = ({
   searchPlaceholder = 'Search Events...',
   onSearch,
   showSort = true,
-  sortOptions = ['Date', 'Category', 'Popularity'],
+  sortOptions = ['Date', 'Category', 'Club'],
   onSort
 }) => {
   const { user, logout, isAuthenticated } = useAuth();
