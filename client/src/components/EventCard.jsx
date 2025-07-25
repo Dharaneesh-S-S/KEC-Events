@@ -1,6 +1,7 @@
 // EventCard.jsx
 import React from 'react';
 import { Calendar, Users, Clock } from 'lucide-react';
+import clubLogo from './clubLogo.jpg'; // ✅ Imported logo
 
 const EventCard = ({ event, onRegister, isAuthenticated = false }) => (
   <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
@@ -11,8 +12,10 @@ const EventCard = ({ event, onRegister, isAuthenticated = false }) => (
         alt={event.title}
         className="w-full h-48 object-cover"
       />
+
+      {/* Free Tag */}
       {event.isFree && (
-        <span className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+        <span className="absolute bottom-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
           Free
         </span>
       )}
@@ -20,7 +23,15 @@ const EventCard = ({ event, onRegister, isAuthenticated = false }) => (
 
     {/* Details */}
     <div className="p-4">
-      <h3 className="text-lg font-bold text-gray-900 mb-2">{event.title}</h3>
+      {/* Title and Club Logo in one line */}
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-bold text-gray-900">{event.title}</h3>
+        <img
+          src={clubLogo}
+          alt="Club Logo"
+          className="w-8 h-8 rounded-full border border-gray-300 object-cover"
+        />
+      </div>
 
       <div className="space-y-2 mb-4">
         <div className="flex items-center text-sm text-gray-600">
