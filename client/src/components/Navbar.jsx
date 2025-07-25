@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Search, Bell, Mail, Settings, LogOut, Menu, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import kecLogo from './kec.jpg';
+
 
 const Navbar = ({
   searchPlaceholder = 'Search Events...',
@@ -56,14 +58,12 @@ const Navbar = ({
                     )
                   : navigate('/')
               } >
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">KEC</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Events</span>
+<img src={kecLogo} alt="KEC Logo" className="w-8 h-8 rounded-lg object-cover" />
+              <span className="text-xl font-bold text-gray-900">KEC Events</span>
             </div>
           </div>
 
-          {/* Center – Search */}
+          {/* Center – Search */}
           <div className="flex-1 max-w-2xl mx-8">
             <form onSubmit={handleSearch} className="flex space-x-3">
               <div className="flex-1 relative">
@@ -146,4 +146,4 @@ const Navbar = ({
   );
 };
 
-export default Navbar;
+export default Navbar;
