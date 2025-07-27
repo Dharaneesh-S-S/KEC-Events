@@ -1,9 +1,11 @@
-// App.jsx
+// src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
+// Page Components
 import HomePage from './pages/HomePage';
+import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
 import StudentDashboard from './pages/StudentDashboard';
 import ClubDashboard from './pages/ClubDashboard';
@@ -23,38 +25,86 @@ import CCBookingFormPage from './pages/CCBookingFormPage';
 import EditEventPage from './pages/EditEventPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+// Protected Route Component
+function ProtectedRoute({ children, requiredRole }) {
+  const { user, isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (requiredRole && user?.role !== requiredRole) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return children;
 }
 
+// Main App Routes Component
 function AppRoutes() {
   const { user } = useAuth();
 
   return (
     <Routes>
+      {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/unauthorized" element={<div>Unauthorized Access</div>} />
 
-      {/* Protected Routes */}
+      {/* Student Routes */}
       <Route
         path="/dashboard/student"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="student">
             <StudentDashboard />
           </ProtectedRoute>
         }
       />
 
+      {/* Club Routes */}
       <Route
         path="/dashboard/club"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="club">
             <ClubDashboard />
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/club/create-event"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <CreateEventPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/manage-events"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <ManageEventsPage />
+          </ProtectedRoute>
+        }
+      />
 
+      {/* Shared Authenticated Routes */}
+      <Route
+        path="/events/register"
+        element={
+          <ProtectedRoute>
+            <EventRegistrationPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute>
+            <CalendarPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/contacts"
         element={
@@ -64,152 +114,59 @@ function AppRoutes() {
         }
       />
 
+      {/* Venue Booking Routes */}
       <Route
-        path="/calendar"
+        path="/venue-booking"
         element={
-          <ProtectedRoute>
-            <CalendarPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/events/register"
-        element={
-          <ProtectedRoute>
-            <EventRegistrationPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/create-event"
-        element={
-          <ProtectedRoute>
-            <CreateEventPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/manage-events"
-        element={
-          <ProtectedRoute>
-            <ManageEventsPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/notifications"
-        element={
-          <ProtectedRoute>
-            <NotificationsPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/venue-booking"
-        element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="club">
             <VenueBookingPage />
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/club/venue-booking/cc"
+        path="/venue-booking/cc"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="club">
             <CCBookingPage />
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/club/venue-booking/cc/form/:venueId"
+        path="/venue-booking/cc/form/:venueId"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="club">
             <CCBookingFormPage />
           </ProtectedRoute>
         }
       />
 
-      <Route
-        path="/club/venue-booking/seminar"
-        element={
-          <ProtectedRoute>
-            <SeminarHallBookingPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/venue-booking/seminar/form/:venueId"
-        element={
-          <ProtectedRoute>
-            <SeminarHallFormPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/venue-booking/maharaja"
-        element={
-          <ProtectedRoute>
-            <MaharajaBookingPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/venue-booking/convention"
-        element={
-          <ProtectedRoute>
-            <ConventionCenterBookingPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/edit-event/:eventId"
-        element={
-          <ProtectedRoute>
-            <EditEventPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/club/analytics"
-        element={
-          <ProtectedRoute>
-            <AnalyticsPage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Redirect authenticated users based on role */}
+      {/* Dashboard Redirect */}
       <Route
         path="/dashboard"
         element={
-          <Navigate
-            to={user?.role === 'club' ? '/dashboard/club' : '/dashboard/student'}
-            replace
-          />
+          user ? (
+            <Navigate 
+              to={user.role === 'club' ? '/dashboard/club' : '/dashboard/student'} 
+              replace 
+            />
+          ) : (
+            <Navigate to="/login" replace />
+          )
         }
       />
+
+      {/* Fallback Route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-/* ---------- Main App ---------- */
+// Main App Component
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="app min-h-screen bg-gray-50">
           <AppRoutes />
         </div>
       </Router>
