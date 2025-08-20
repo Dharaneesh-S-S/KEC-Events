@@ -1,22 +1,45 @@
 // pages/ManageEventsPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Trash2, Calendar, MapPin, Users } from 'lucide-react';
+import { Edit, Trash2, Calendar, MapPin, Users, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { events } from '../data/events';
+import { apiRequest } from '../services/api';
 
 function ManageEventsPage() {
   const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
 
-  /* ---------- Mock filter: club's events ---------- */
-  const clubEvents = events.filter(
-    (e) => e.category === 'Technical' || e.category === 'Cultural',
-  );
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const data = await apiRequest('/events/club');
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.events)
+        ? data.events
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
+      setEvents(list);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to fetch events. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
   const handleEdit = (ev) => {
-    navigate(`/club/edit-event/${ev.id}`, { state: { event: ev } });
+    navigate(`/club/edit-event/${ev._id}`, { state: { event: ev } });
   };
 
   const handleDelete = (ev) => {
@@ -24,129 +47,188 @@ function ManageEventsPage() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    if (eventToDelete) {
-      console.log('Deleting event:', eventToDelete.id);
+  const confirmDelete = async () => {
+    if (!eventToDelete) return;
+
+    try {
+      await apiRequest(`/events/${eventToDelete._id}`, { method: 'DELETE' });
       alert(`Event “${eventToDelete.title}” deleted successfully!`);
+      setEvents(events.filter((e) => e._id !== eventToDelete._id));
       setShowDeleteModal(false);
       setEventToDelete(null);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete event.');
     }
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center py-16">
+          <div className="text-center">
+            <Loader2 className="w-20 h-20 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-lg text-gray-600 font-medium">Loading events...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-16">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Error Loading Events</h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">{error}</p>
+          <button
+            onClick={fetchEvents}
+            className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+
+    if (!events.length) {
+      return (
+        <div className="text-center py-16">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-10 h-10 text-gray-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">No Events Created</h3>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">You haven't created any events yet.</p>
+          <button
+            onClick={() => navigate('/club/create-event')}
+            className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+          >
+            Create Your First Event
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {events.map((ev) => (
+          <div
+            key={ev._id}
+            className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200 transform hover:-translate-y-1"
+          >
+            <div className="relative">
+              <img
+                src={ev.image || 'https://via.placeholder.com/400x200'}
+                alt={ev.title}
+                className="w-full h-52 object-cover rounded-t-2xl"
+              />
+              {ev.isFree && (
+                <span className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold shadow-md">
+                  Free
+                </span>
+              )}
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-bold mb-3 leading-tight text-gray-900">{ev.title}</h3>
+              <div className="space-y-3 mb-6 text-sm text-gray-600">
+                <div className="flex items-center">
+                  <Calendar className="w-5 h-5 mr-3 text-gray-500" />
+                  <span className="font-medium">{new Date(ev.date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="w-5 h-5 mr-3 text-gray-500" />
+                  <span className="font-medium">{ev.venue}</span>
+                </div>
+                <div className="flex items-center">
+                  <Users className="w-5 h-5 mr-3 text-gray-500" />
+                  <span className="font-medium">{ev.teamSize}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1.5 rounded-full font-medium">
+                  {ev.category}
+                </span>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => handleEdit(ev)}
+                    className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 hover:scale-110"
+                    title="Edit Event"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ev)}
+                    className="p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-110"
+                    title="Delete Event"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar showSort={false} />
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/dashboard/club')}
+        className="fixed top-6 left-6 z-50 p-3 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm"
+        title="Go Back to Dashboard"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </button>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+      <Navbar showSort={false} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+        {/* Header Section */}
+        <div className="mb-12">
           <button
             onClick={() => navigate('/dashboard/club')}
-            className="text-blue-600 hover:text-blue-700 mb-4"
+            className="text-blue-600 hover:text-blue-700 mb-6 transition-colors duration-200 font-medium"
           >
             ← Back to Dashboard
           </button>
-          <h1 className="text-3xl font-bold mb-2">Manage Events</h1>
-          <p className="text-lg text-gray-600">Edit or delete your club events</p>
+          <h1 className="text-4xl font-bold mb-4 leading-tight text-gray-900">Manage Events</h1>
+          <p className="text-xl text-gray-600 leading-relaxed">Edit or delete your club events</p>
         </div>
 
-        {!clubEvents.length ? (
-          <div className="text-center py-12">
-            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Events Created</h3>
-            <p className="text-gray-500 mb-6">
-              You haven’t created any events yet.
-            </p>
-            <button
-              onClick={() => navigate('/club/create-event')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Create Your First Event
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clubEvents.map((ev) => (
-              <div
-                key={ev.id}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition"
-              >
-                <div className="relative">
-                  <img
-                    src={ev.image}
-                    alt={ev.title}
-                    className="w-full h-48 object-cover"
-                  />
-                  {ev.isFree && (
-                    <span className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                      Free
-                    </span>
-                  )}
-                </div>
+        {renderContent()}
 
-                <div className="p-4">
-                  <h3 className="text-lg font-bold mb-2">{ev.title}</h3>
-
-                  <div className="space-y-2 mb-4 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      {new Date(ev.date).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {ev.venue}
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="w-4 h-4 mr-2" />
-                      {ev.teamSize}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                      {ev.category}
-                    </span>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEdit(ev)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(ev)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Delete modal */}
+        {/* Delete Modal */}
         {showDeleteModal && eventToDelete && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Delete Event</h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete “{eventToDelete.title}”? This
-                action cannot be undone.
-              </p>
-              <div className="flex justify-end space-x-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="w-8 h-8 text-red-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Delete Event</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Are you sure you want to delete "<strong>{eventToDelete.title}</strong>"? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
                 >
-                  Delete
+                  Delete Event
                 </button>
               </div>
             </div>

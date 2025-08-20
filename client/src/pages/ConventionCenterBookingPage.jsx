@@ -14,11 +14,16 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
+import { bookingsAPI, apiRequest } from '../services/api';
 
 function ConventionCenterBookingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
+
+  // Load convention center venues from DB
+  const [venues, setVenues] = useState([]);
+  const [selectedVenueId, setSelectedVenueId] = useState('');
 
   const [formData, setFormData] = useState({
     fromDate: '',
@@ -26,7 +31,7 @@ function ConventionCenterBookingPage() {
     toDate: '',
     toTime: '',
     facultyInCharge: '',
-    department: 'Convention Center',
+    department: '',
     mobileNumber: '',
     functionName: '',
     functionDate: '',
@@ -40,6 +45,25 @@ function ConventionCenterBookingPage() {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Fetch venues
+  React.useEffect(() => {
+    const loadVenues = async () => {
+      try {
+        const resp = await apiRequest('/venues?venueType=convention');
+        const list = resp.venues || [];
+        setVenues(list);
+        if (list.length) {
+          setSelectedVenueId(list[0]._id || list[0].id);
+          setFormData((p) => ({ ...p, department: list[0].department || '' }));
+        }
+      } catch (e) {
+        console.error('Failed to load convention venues', e);
+      }
+    };
+    loadVenues();
+  }, []);
 
   /* ---------- Helpers ---------- */
   const handleLogout = () => {
@@ -49,6 +73,7 @@ function ConventionCenterBookingPage() {
 
   const validateForm = () => {
     const req = [
+      'venue',
       'fromDate',
       'fromTime',
       'toDate',
@@ -62,6 +87,7 @@ function ConventionCenterBookingPage() {
     ];
 
     const newErrors = {};
+    if (!selectedVenueId) newErrors.venue = 'Venue is required';
     req.forEach((f) => {
       if (!String(formData[f]).trim()) newErrors[f] = 'This field is required';
     });
@@ -82,12 +108,42 @@ function ConventionCenterBookingPage() {
     return !Object.keys(newErrors).length;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Convention Center booking submitted:', formData);
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const bookingData = {
+        venue: selectedVenueId,
+        venueType: 'convention',
+        fromDate: formData.fromDate,
+        fromTime: formData.fromTime,
+        toDate: formData.toDate,
+        toTime: formData.toTime,
+        facultyInCharge: formData.facultyInCharge,
+        department: formData.department,
+        mobileNumber: formData.mobileNumber,
+        functionName: formData.functionName,
+        functionDate: formData.functionDate,
+        chiefGuest: formData.chiefGuest,
+        totalAudience: formData.totalAudience,
+        airConditioning: formData.airConditioning,
+        electricalLighting: formData.electricalLighting,
+        stageLightings: formData.stageLightings,
+        houseKeeping: formData.houseKeeping,
+        audioWork: formData.audioWork,
+        status: 'pending'
+      };
+
+      const result = await bookingsAPI.create(bookingData);
       alert('Convention Center booked successfully!');
       navigate('/club/venue-booking');
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert('Failed to create booking. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,6 +151,14 @@ function ConventionCenterBookingPage() {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
     if (errors[name]) setErrors((p) => ({ ...p, [name]: '' }));
+  };
+
+  const handleVenueChange = (e) => {
+    const val = e.target.value;
+    setSelectedVenueId(val);
+    const venue = venues.find(v => (v._id || v.id) === val);
+    setFormData((p) => ({ ...p, department: venue?.department || '' }));
+    if (errors.venue) setErrors((p) => ({ ...p, venue: '' }));
   };
 
   /* ---------- JSX ---------- */
@@ -163,6 +227,23 @@ function ConventionCenterBookingPage() {
 
           <div className="bg-white rounded-lg shadow-md">
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Venue Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Venue *</label>
+                <select
+                  value={selectedVenueId}
+                  onChange={handleVenueChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.venue ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                  <option value="">{venues.length ? 'Choose a venue' : 'Loading venues...'}</option>
+                  {venues.map(v => (
+                    <option key={v._id || v.id} value={v._id || v.id}>
+                      {v.name} — {v.department}
+                    </option>
+                  ))}
+                </select>
+                {errors.venue && <p className="text-red-500 text-sm mt-1">{errors.venue}</p>}
+              </div>
               {/* Dates & Times */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
@@ -341,9 +422,10 @@ function ConventionCenterBookingPage() {
               <div className="flex justify-center pt-6 border-t border-gray-200">
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  disabled={loading}
+                  className="px-8 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-orange-400"
                 >
-                  Submit Booking
+                  {loading ? 'Booking...' : 'Submit Booking'}
                 </button>
               </div>
             </form>

@@ -33,28 +33,31 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <div
         className={`
-          fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 transform
+          fixed top-0 left-0 h-full w-72 bg-white shadow-xl z-50 transform
           transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0 lg:static lg:shadow-none lg:border-r lg:border-gray-200
+          lg:translate-x-0 lg:static lg:shadow-lg lg:border-r lg:border-gray-200
         `}
       >
         {/* Mobile header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">KEC</span>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 lg:hidden">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
+              <span className="text-white font-bold text-lg">KEC</span>
             </div>
             <span className="text-xl font-bold text-gray-900">Fests</span>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5" />
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+          >
+            <X className="w-6 h-6 text-gray-600" />
           </button>
         </div>
 
         {/* Menu */}
-        <nav className="p-4">
-          <div className="space-y-2">
+        <nav className="p-6">
+          <div className="space-y-3">
             {menuItems.map(({ icon: Icon, label, path }) => {
               const isActive = location.pathname === path;
               return (
@@ -62,16 +65,16 @@ const Sidebar = ({ isOpen, onClose }) => {
                   key={path}
                   onClick={() => handleNavigation(path)}
                   className={`
-                    w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors
+                    w-full flex items-center space-x-4 px-5 py-4 rounded-xl text-left transition-all duration-200
                     ${
                       isActive
-                        ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-600 border-2 border-blue-200 shadow-sm'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm'
                     }
                   `}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{label}</span>
+                  <Icon className={`w-6 h-6 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span className="font-semibold text-base">{label}</span>
                 </button>
               );
             })}

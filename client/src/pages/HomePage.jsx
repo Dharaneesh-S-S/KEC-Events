@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   /* ---------- Derived list ---------- */
@@ -42,20 +42,48 @@ function HomePage() {
     else navigate('/login');
   };
 
+  const handleBack = () => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        navigate('/dashboard/admin');
+      } else if (user.role === 'club') {
+        navigate('/dashboard/club');
+      } else {
+        navigate('/dashboard/student');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Back Button for logged-in users */}
+      {isAuthenticated && (
+        <button
+          onClick={handleBack}
+          className="fixed top-6 left-6 z-50 p-3 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm"
+          title="Go Back to Dashboard"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+      )}
 
       <Navbar onSearch={setSearchQuery} onSort={setSortBy} />
 
-      <main className="max-w-7xl mx-auto px-0 sm:px-0 lg:px-0 py-8"> 
-          <div className="mb-8 px-4"> {/* Added px-4 only to the heading section */}
-    <h1 className="text-3xl font-bold mb-2">Welcome to KEC Fests</h1>
-    <p className="text-lg text-gray-600">
-      Discover and participate in exciting events at Kongu Engineering College
-    </p>
-  </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24"> 
+        {/* Hero Section */}
+        <div className="text-center mb-12 px-4">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+            Welcome to KEC Fests
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Discover and participate in exciting events at Kongu Engineering College
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Events Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
           {filteredAndSortedEvents.map((ev) => (
             <EventCard
               key={ev.id}
@@ -66,11 +94,20 @@ function HomePage() {
           ))}
         </div>
 
+        {/* No Results Message */}
         {!filteredAndSortedEvents.length && (
-          <div className="text-center py-12">
-            <p className="text-lg text-gray-500">
-              No events found matching your criteria.
-            </p>
+          <div className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
+              <p className="text-gray-500">
+                No events match your current search criteria. Try adjusting your search or filters.
+              </p>
+            </div>
           </div>
         )}
       </main>

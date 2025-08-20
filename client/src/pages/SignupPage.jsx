@@ -83,6 +83,15 @@ function SignupPage() {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4 transition-all duration-300 ${transitionStage === 'enter' ? 'opacity-0' : transitionStage === 'exit' ? 'opacity-0 scale-95' : 'opacity-100'}`}>
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/')}
+        className="absolute top-6 left-6 p-3 bg-white/80 hover:bg-white text-gray-700 hover:text-blue-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm"
+        title="Go Back to Home"
+      >
+        <ArrowLeft className="w-6 h-6" />
+      </button>
+
       <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl">
         <div className="flex flex-col lg:flex-row">
           {/* Illustration Section */}

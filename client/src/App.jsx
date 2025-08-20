@@ -22,8 +22,11 @@ import SeminarHallFormPage from './pages/SeminarHallFormPage';
 import MaharajaBookingPage from './pages/MaharajaBookingPage';
 import ConventionCenterBookingPage from './pages/ConventionCenterBookingPage';
 import CCBookingFormPage from './pages/CCBookingFormPage';
+import DynamicVenueBookingPage from './pages/DynamicVenueBookingPage';
+import ClubVenueBookingsDashboard from './pages/ClubVenueBookingsDashboard';
 import EditEventPage from './pages/EditEventPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRole }) {
@@ -87,6 +90,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/club/edit-event/:id"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <EditEventPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/notifications"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/analytics"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <AnalyticsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Shared Authenticated Routes */}
       <Route
@@ -116,7 +143,7 @@ function AppRoutes() {
 
       {/* Venue Booking Routes */}
       <Route
-        path="/venue-booking"
+        path="/club/venue-booking"
         element={
           <ProtectedRoute requiredRole="club">
             <VenueBookingPage />
@@ -124,7 +151,23 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/venue-booking/cc"
+        path="/club/venue-booking/dynamic"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <DynamicVenueBookingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/venue-bookings"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <ClubVenueBookingsDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/venue-booking/cc"
         element={
           <ProtectedRoute requiredRole="club">
             <CCBookingPage />
@@ -132,10 +175,52 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/venue-booking/cc/form/:venueId"
+        path="/club/venue-booking/cc/form/:venueId"
         element={
           <ProtectedRoute requiredRole="club">
             <CCBookingFormPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/venue-booking/seminar"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <SeminarHallBookingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/venue-booking/seminar/form/:venueId"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <SeminarHallFormPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/venue-booking/maharaja"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <MaharajaBookingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/venue-booking/convention"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <ConventionCenterBookingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Route */}
+      <Route
+        path="/dashboard/admin"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />
@@ -145,9 +230,9 @@ function AppRoutes() {
         path="/dashboard"
         element={
           user ? (
-            <Navigate 
-              to={user.role === 'club' ? '/dashboard/club' : '/dashboard/student'} 
-              replace 
+            <Navigate
+              to={user.role === 'admin' ? '/dashboard/admin' : user.role === 'club' ? '/dashboard/club' : '/dashboard/student'}
+              replace
             />
           ) : (
             <Navigate to="/login" replace />

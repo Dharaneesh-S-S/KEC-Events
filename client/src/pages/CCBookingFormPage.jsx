@@ -15,13 +15,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
-import { venues } from '../data/venues';
+import { apiRequest, bookingsAPI } from '../services/api';
 
 function CCBookingFormPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { venueId } = useParams();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const [venue, setVenue] = useState(null);
   const [alternatives, setAlternatives] = useState([]);
@@ -40,6 +40,7 @@ function CCBookingFormPage() {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const softwareOptions = [
     'Visual Studio Code',
@@ -63,17 +64,27 @@ function CCBookingFormPage() {
   ];
 
   useEffect(() => {
-    if (venueId) {
-      const foundVenue = venues.find((v) => v.id === venueId);
-      if (foundVenue) {
-        setVenue(foundVenue);
+    const loadVenue = async () => {
+      if (!venueId) return;
+      setLoading(true);
+      try {
+        const data = await apiRequest(`/venues/${encodeURIComponent(venueId)}`);
+        // server returns a single venue object
+        setVenue(data);
         setFormData((prev) => ({
           ...prev,
-          department: foundVenue.department || '',
-          facultyInCharge: foundVenue.facultyInCharge,
+          department: data?.department || '',
+          facultyInCharge: data?.facultyInCharge || '',
         }));
+      } catch (err) {
+        console.error('Failed to load venue:', err);
+        setVenue(null);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    loadVenue();
   }, [venueId]);
 
   const handleLogout = () => {
@@ -115,12 +126,42 @@ function CCBookingFormPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('CC booking submitted:', { formData, alternatives });
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const bookingData = {
+        venue: venueId,
+        venueType: 'cc',
+        fromDate: formData.fromDate,
+        fromTime: formData.fromTime,
+        toDate: formData.toDate,
+        toTime: formData.toTime,
+        facultyInCharge: formData.facultyInCharge,
+        department: formData.department,
+        mobileNumber: formData.mobileNumber,
+        participants: parseInt(formData.participants, 10),
+        eventName: formData.eventName,
+        softwareRequirement: formData.softwareRequirement,
+        eventType: formData.eventType,
+        bookedBy: user?.email || user?.name || 'UNKNOWN_USER',
+        status: 'pending'
+      };
+
+      // Safe log of outgoing payload
+      console.debug('[CCBookingForm] Creating booking with payload:', bookingData);
+
+      const result = await bookingsAPI.create(bookingData);
+      console.debug('[CCBookingForm] Booking created OK:', result);
       alert('CC booked successfully!');
       navigate('/club/venue-booking/cc');
+    } catch (error) {
+      console.error('[CCBookingForm] Booking error:', error);
+      alert('Failed to create booking. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -139,6 +180,17 @@ function CCBookingFormPage() {
   const removeAlternative = (id) => {
     setAlternatives((prev) => prev.filter((alt) => alt.id !== id));
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading venue...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!venue) {
     return (
@@ -480,9 +532,10 @@ function CCBookingFormPage() {
               <div className="flex justify-center pt-6 border-t border-gray-200">
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  disabled={loading}
+                  className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors font-medium"
                 >
-                  Submit Booking
+                  {loading ? 'Booking...' : 'Submit Booking'}
                 </button>
               </div>
             </form>

@@ -4,6 +4,7 @@ import { Calendar, Clock, User, Phone, FileText, Settings, LogOut, Globe, Menu }
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { venues } from '../data/venues';
+import { bookingsAPI } from '../services/api';
 
 function SeminarHallFormPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -32,6 +33,7 @@ function SeminarHallFormPage() {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (venueId) {
@@ -80,12 +82,43 @@ function SeminarHallFormPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Seminar Hall booking submitted:', formData);
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const bookingData = {
+        venue: venueId,
+        venueType: 'seminar',
+        fromDate: formData.fromDate,
+        fromTime: formData.fromTime,
+        toDate: formData.toDate,
+        toTime: formData.toTime,
+        facultyInCharge: formData.facultyInCharge,
+        department: formData.department,
+        mobileNumber: formData.mobileNumber,
+        functionName: formData.functionName,
+        functionDate: formData.functionDate,
+        chiefGuest: formData.chiefGuest,
+        totalAudience: formData.totalAudience,
+        airConditioning: formData.airConditioning,
+        electricalLighting: formData.electricalLighting,
+        stageLightings: formData.stageLightings,
+        houseKeeping: formData.houseKeeping,
+        audioWork: formData.audioWork,
+        status: 'pending'
+      };
+
+      const result = await bookingsAPI.create(bookingData);
       alert('Seminar Hall booked successfully!');
       navigate('/club/venue-booking/seminar');
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert('Failed to create booking. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
