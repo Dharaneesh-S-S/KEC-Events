@@ -2,13 +2,13 @@
 // pages/VenueBookingPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Settings, LogOut, Menu, Globe, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { MapPin, Settings, LogOut, Globe, Calendar, Clock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { bookingsAPI } from '../services/api';
 import Sidebar from '../components/Sidebar';
+import Navbar from '../components/Navbar';
 
 function VenueBookingPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [loadingBookings, setLoadingBookings] = useState(false);
@@ -68,60 +68,19 @@ function VenueBookingPage() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar removed */}
       <div className="flex-1 lg:ml-0">
         {/* Navbar */}
-        <nav className="fixed top-0 inset-x-0 z-40 bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden p-2 text-gray-600 hover:text-blue-600"
-                >
-                  <Menu className="w-6 h-6" />
-                </button>
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">KEC</span>
-                  </div>
-                  <span className="text-xl font-bold">Fests</span>
-                </div>
-              </div>
-              <span className="text-lg font-medium text-gray-700">Venue Booking</span>
-              <div className="flex items-center space-x-4">
-                <button className="p-2 text-gray-600 hover:text-blue-600">
-                  <Settings className="w-6 h-6" />
-                </button>
-                <button className="p-2 text-gray-600 hover:text-blue-600">
-                  <Globe className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
+        <Navbar showBackButton={true} showSearch={false} /> {/* Use the shared Navbar component */}
         {/* Spacer to avoid content underlap */}
         <div className="h-16" />
 
         {/* Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <button
-              onClick={() => navigate('/dashboard/club')}
-              className="text-blue-600 hover:text-blue-700 mb-4"
-            >
-              ← Back to Dashboard
-            </button>
-            <h1 className="text-3xl font-bold mb-2">Venue Booking Dashboard</h1>
-            <p className="text-lg text-gray-600">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold mb-2">Venue Booking Dashboard</h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Select a venue type to start booking for your events
             </p>
           </div>

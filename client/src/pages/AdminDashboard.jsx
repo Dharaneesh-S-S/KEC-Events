@@ -24,7 +24,10 @@ const AdminDashboard = () => {
     name: '',
     email: '',
     department: '',
-    description: ''
+    description: '',
+    role: 'club', // Default role to 'club'
+    labPhoneNumber: '',
+    labName: '',
   });
 
   // Venue management state
@@ -115,8 +118,26 @@ const AdminDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.department) {
-      setError('Please fill in all required fields');
+    const newErrors = {};
+    if (!formData.name) newErrors.name = 'Name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.role) newErrors.role = 'Role is required';
+
+    if (formData.role === 'club' && !formData.department) {
+      newErrors.department = 'Department is required for clubs';
+    }
+
+    if (formData.role === 'labIncharge') {
+      if (!formData.labPhoneNumber) newErrors.labPhoneNumber = 'Phone Number is required for Lab Incharge';
+      if (!formData.labName) newErrors.labName = 'Lab Name is required for Lab Incharge';
+      // Basic phone number validation
+      if (formData.labPhoneNumber && !/^\d{10}$/.test(formData.labPhoneNumber)) {
+        newErrors.labPhoneNumber = 'Phone number must be 10 digits';
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setError(Object.values(newErrors).join(', '));
       return;
     }
 
@@ -125,14 +146,14 @@ const AdminDashboard = () => {
     setSuccess('');
 
     try {
-      const response = await adminAPI.createClub(formData);
+      const response = await adminAPI.createClub(formData); // This API call needs to be generalized on backend
       
       // Show success message
-      setSuccess('Club created successfully!');
+      setSuccess(`${formData.role === 'club' ? 'Club' : formData.role === 'labIncharge' ? 'Lab Incharge' : 'User'} created successfully!`);
       
-      // Store generated password and club name for modal
+      // Store generated password and club name (or user name for lab incharge) for modal
       setGeneratedPassword(response.generatedPassword);
-      setNewClubName(formData.name);
+      setNewClubName(formData.name); // Renaming this state to newUserDisplayName might be better long term
       setShowPasswordModal(true);
       
       // Clear form
@@ -140,15 +161,22 @@ const AdminDashboard = () => {
         name: '',
         email: '',
         department: '',
-        description: ''
+        description: '',
+        role: 'club',
+        labPhoneNumber: '',
+        labName: '',
       });
       
-      // Refresh clubs list
-      const updatedClubs = await adminAPI.getClubs();
-      setClubs(updatedClubs || []);
+      // Refresh clubs list (or relevant list based on role)
+      if (formData.role === 'club') {
+        const updatedClubs = await adminAPI.getClubs();
+        setClubs(updatedClubs || []);
+      } else {
+        // Potentially refresh a list of lab incharge users if such a list existed
+      }
       
     } catch (err) {
-      setError(err.message || 'Failed to create club. Please try again.');
+      setError(err.message || 'Failed to create user. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -400,7 +428,7 @@ const AdminDashboard = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Club Management
+                User Management
               </button>
               <button
                 onClick={() => setActiveTab('venues')}
@@ -447,18 +475,18 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Club Management Content */}
+        {/* User Management Content */}
         {activeTab === 'clubs' && (
           <>
-            {/* Create Club Section */}
+            {/* Create User Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Create New Club</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Create New User</h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Club Name *
+                  Name *
                 </label>
                 <input
                   type="text"
@@ -468,7 +496,7 @@ const AdminDashboard = () => {
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter club name"
+                  placeholder="Enter user's name"
                 />
               </div>
 
@@ -484,24 +512,76 @@ const AdminDashboard = () => {
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter club email"
+                  placeholder="Enter user's email"
                 />
               </div>
             </div>
 
             <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                Role *
+              </label>
+              <select
+                id="role"
+                name="role"
+                value={formData.role}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select Role</option>
+                <option value="club">Club</option>
+                <option value="labIncharge">Lab Incharge</option>
+              </select>
+            </div>
+
+            {formData.role === 'labIncharge' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="labPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    id="labPhoneNumber"
+                    name="labPhoneNumber"
+                    value={formData.labPhoneNumber}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter phone number (10 digits)"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="labName" className="block text-sm font-medium text-gray-700 mb-1">
+                    Lab Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="labName"
+                    name="labName"
+                    value={formData.labName}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter lab name"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className={formData.role === 'club' ? 'block' : 'hidden'}>
               <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
-                Department *
+                Department
               </label>
               <select
                 id="department"
                 name="department"
                 value={formData.department}
                 onChange={handleInputChange}
-                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select Department</option>
+                <option value="">Select Department (Optional)</option>
                 {departments.length > 0 ? (
                   departments.map((dept) => (
                     <option key={dept} value={dept}>
@@ -528,7 +608,7 @@ const AdminDashboard = () => {
                 onChange={handleInputChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter club description (optional)"
+                placeholder="Enter description (optional)"
               />
             </div>
 
@@ -548,20 +628,20 @@ const AdminDashboard = () => {
                     Creating...
                   </div>
                 ) : (
-                  'Create Club'
+                  'Create User'
                 )}
               </button>
             </div>
           </form>
         </div>
 
-        {/* All Clubs Section */}
+        {/* All Users Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">All Clubs</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">All Users</h2>
           
           {clubs.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">No clubs found. Create your first club above.</p>
+              <p className="text-gray-500">No users found. Create your first user above.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -569,13 +649,19 @@ const AdminDashboard = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Club Name
+                      Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Department
+                      Role
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Department / Lab Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Phone Number
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Description
@@ -586,24 +672,32 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {clubs.map((club) => (
-                    <tr key={club._id || club.id} className="hover:bg-gray-50">
+                  {clubs.map((user) => (
+                    <tr key={user._id || user.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {club.name}
+                        {user.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {club.email}
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {user.role}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {club.department}
+                          {user.role === 'club' ? (user.department || 'N/A') : (user.labName || 'N/A')}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {user.labPhoneNumber || 'N/A'}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                        {club.description || '-'}
+                        {user.description || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {club.createdAt ? new Date(club.createdAt).toLocaleDateString() : '-'}
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
                       </td>
                     </tr>
                   ))}

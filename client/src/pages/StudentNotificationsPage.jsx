@@ -1,18 +1,16 @@
-// pages/NotificationsPage.jsx
+// pages/StudentNotificationsPage.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle, Clock, MapPin, Users } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { notifications } from '../data/notifications';
+import { Bell, CheckCircle, Clock, MapPin, Users, XCircle, Info, CalendarClock, RefreshCcw } from 'lucide-react';
+import { notifications } from '../data/notifications'; // Import notifications data
 
-function NotificationsPage() {
-  const navigate = useNavigate();
+function StudentNotificationsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filtered notifications based on search query
+  // Filtered notifications based on search query (and potentially student-specific types)
   const filteredNotifications = notifications.filter(notification =>
-    notification.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    notification.message.toLowerCase().includes(searchQuery.toLowerCase())
+    (notification.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    notification.message.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const iconFor = (type) => {
@@ -23,6 +21,14 @@ function NotificationsPage() {
         return <Users className="w-5 h-5 text-blue-600" />;
       case 'deadline_reminder':
         return <Clock className="w-5 h-5 text-orange-600" />;
+      case 'event_cancelled':
+        return <XCircle className="w-5 h-5 text-red-600" />;
+      case 'system_update':
+        return <Info className="w-5 h-5 text-purple-600" />;
+      case 'meeting_reminder':
+        return <CalendarClock className="w-5 h-5 text-indigo-600" />;
+      case 'event_update':
+        return <RefreshCcw className="w-5 h-5 text-yellow-600" />;
       default:
         return <Bell className="w-5 h-5 text-gray-600" />;
     }
@@ -36,6 +42,14 @@ function NotificationsPage() {
         return 'border-l-blue-500 bg-blue-50';
       case 'deadline_reminder':
         return 'border-l-orange-500 bg-orange-50';
+      case 'event_cancelled':
+        return 'border-l-red-500 bg-red-50';
+      case 'system_update':
+        return 'border-l-purple-500 bg-purple-50';
+      case 'meeting_reminder':
+        return 'border-l-indigo-500 bg-indigo-50';
+      case 'event_update':
+        return 'border-l-yellow-500 bg-yellow-50';
       default:
         return 'border-l-gray-500 bg-gray-50';
     }
@@ -45,29 +59,31 @@ function NotificationsPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar showSort={false} onSearch={setSearchQuery} />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Notifications</h1>
-          <p className="text-lg text-gray-600">
-            View your recent notifications and updates
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+        {/* Header */}
+        <div className="text-center mb-12 px-4">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight">Student Notifications</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            View notifications related to your registered events and deadlines
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md">
+        {/* Notifications List */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold flex items-center">
               <Bell className="w-5 h-5 mr-2" />
               Recent Notifications
             </h2>
           </div>
-
           <div className="divide-y divide-gray-200">
+            {/* Conditionally render content */}
             {!filteredNotifications.length ? (
               <div className="p-12 text-center">
                 <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No Notifications</h3>
                 <p className="text-gray-500">
-                  No notifications match your search criteria.
+                  You don't have any student-related notifications yet.
                 </p>
               </div>
             ) : (
@@ -141,4 +157,4 @@ function NotificationsPage() {
   );
 }
 
-export default NotificationsPage;
+export default StudentNotificationsPage;

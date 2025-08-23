@@ -10,21 +10,18 @@ import {
   Settings,
   LogOut,
   Globe,
-  Menu,
   Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import Sidebar from '../components/Sidebar';
+import Navbar from '../components/Navbar'; // Import Navbar component
 import { bookingsAPI, apiRequest } from '../services/api';
 
 function MaharajaBookingPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
 
   // Load Maharaja venues from DB
-  const [venues, setVenues] = useState([]);
-  const [selectedVenueId, setSelectedVenueId] = useState('');
+  
 
   const [formData, setFormData] = useState({
     fromDate: '',
@@ -32,7 +29,7 @@ function MaharajaBookingPage() {
     toDate: '',
     toTime: '',
     facultyInCharge: '',
-    department: '',
+    department: 'Maharaja Hall',
     mobileNumber: '',
     functionName: '',
     functionDate: '',
@@ -48,6 +45,7 @@ function MaharajaBookingPage() {
   const [loading, setLoading] = useState(false);
 
   // Fetch venues
+  /*
   React.useEffect(() => {
     const loadVenues = async () => {
       try {
@@ -64,6 +62,7 @@ function MaharajaBookingPage() {
     };
     loadVenues();
   }, []);
+  */
 
   /* ---------- Helpers ---------- */
   const handleLogout = () => {
@@ -73,7 +72,7 @@ function MaharajaBookingPage() {
 
   const validateForm = () => {
     const req = [
-      'venue',
+      
       'fromDate',
       'fromTime',
       'toDate',
@@ -86,7 +85,7 @@ function MaharajaBookingPage() {
       'totalAudience',
     ];
     const newErr = {};
-    if (!selectedVenueId) newErr.venue = 'Venue is required';
+    
     req.forEach((f) => {
       if (!String(formData[f]).trim()) newErr[f] = 'Required';
     });
@@ -112,7 +111,7 @@ function MaharajaBookingPage() {
     setLoading(true);
     try {
       const bookingData = {
-        venue: selectedVenueId,
+        venue: 'Maharaja Hall', // Hardcode venue
         venueType: 'maharaja',
         fromDate: formData.fromDate,
         fromTime: formData.fromTime,
@@ -150,73 +149,19 @@ function MaharajaBookingPage() {
     if (errors[name]) setErrors((p) => ({ ...p, [name]: '' }));
   };
 
-  const handleVenueChange = (e) => {
-    const val = e.target.value;
-    setSelectedVenueId(val);
-    const venue = venues.find(v => (v._id || v.id) === val);
-    setFormData((p) => ({ ...p, department: venue?.department || '' }));
-    if (errors.venue) setErrors((p) => ({ ...p, venue: '' }));
-  };
-
+  
   /* ---------- JSX ---------- */
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="min-h-screen bg-gray-50">
+      <Navbar showBackButton={true} showSearch={false} />
 
-      <div className="flex-1">
-        {/* Navbar */}
-        <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden p-2 text-gray-600 hover:text-purple-600"
-                >
-                  <Menu className="w-6 h-6" />
-                </button>
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">KEC</span>
-                  </div>
-                  <span className="text-xl font-bold">Fests</span>
-                </div>
-              </div>
-
-              <span className="text-lg font-medium text-gray-700">
-                Maharaja Booking
-              </span>
-
-              <div className="flex items-center space-x-4">
-                <button className="p-2 text-gray-600 hover:text-purple-600">
-                  <Settings className="w-6 h-6" />
-                </button>
-                <button className="p-2 text-gray-600 hover:text-purple-600">
-                  <Globe className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-
+      <div className="pt-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Form */}
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <button
-              onClick={() => navigate('/club/venue-booking')}
-              className="text-purple-600 hover:text-purple-700 mb-4"
-            >
-              ← Back to Venue Booking
-            </button>
-            <h1 className="text-3xl font-bold mb-2">Book Maharaja Hall</h1>
-            <p className="text-lg text-gray-600">
+          <div className="mb-8 text-center">
+            
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">Book Maharaja Hall</h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Fill in the details to book Maharaja Hall for your event
             </p>
           </div>
@@ -224,22 +169,7 @@ function MaharajaBookingPage() {
           <div className="bg-white rounded-lg shadow-md">
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Venue Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Venue *</label>
-                <select
-                  value={selectedVenueId}
-                  onChange={handleVenueChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 ${errors.venue ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">{venues.length ? 'Choose a venue' : 'Loading venues...'}</option>
-                  {venues.map(v => (
-                    <option key={v._id || v.id} value={v._id || v.id}>
-                      {v.name} — {v.department}
-                    </option>
-                  ))}
-                </select>
-                {errors.venue && <p className="text-red-500 text-sm mt-1">{errors.venue}</p>}
-              </div>
+              
               {/* Dates & Times */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[

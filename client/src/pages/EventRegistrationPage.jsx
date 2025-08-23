@@ -3,13 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { events } from '../data/events';
-import { Calendar, MapPin, Users, Clock, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, ExternalLink, CalendarPlus } from 'lucide-react';
 
 function EventRegistrationPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); // New state for search query
 
   /* ---------- Init select ---------- */
   useEffect(() => {
@@ -22,20 +23,16 @@ function EventRegistrationPage() {
 
   const handleRegisterClick = () => setShowRegistrationForm(true);
 
+  // Filtered events for the sidebar
+  const filteredEvents = events.filter(event =>
+    event.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Back Button */}
-      <button
-        onClick={() => navigate('/dashboard/student')}
-        className="fixed top-6 left-6 z-50 p-3 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm"
-        title="Go Back to Dashboard"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-      </button>
+      {/* Removed old Back Button */}
 
-      <Navbar showSort={false} />
+      <Navbar showSort={false} onSearch={setSearchQuery} /> {/* Pass onSearch prop */}
 
       <div className="flex pt-16">
         {/* Events Sidebar */}
@@ -47,32 +44,38 @@ function EventRegistrationPage() {
             </div>
 
             <div className="p-4 space-y-3">
-              {events.map((ev) => (
-                <div
-                  key={ev.id}
-                  onClick={() => {
-                    setSelectedEvent(ev);
-                    setShowRegistrationForm(false);
-                  }}
-                  className={`
-                    p-4 border-2 rounded-xl cursor-pointer transition-all duration-200
-                    ${
-                      selectedEvent?.id === ev.id
-                        ? 'border-blue-500 bg-blue-50 shadow-md'
-                        : 'border-gray-200 hover:border-blue-300 hover:shadow-md hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <h3 className="font-semibold text-gray-900 mb-3 text-base leading-tight">{ev.title}</h3>
-                  <div className="flex items-center text-sm text-gray-600 mb-3">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                    {new Date(ev.date).toLocaleDateString()}
-                  </div>
-                  <span className="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1.5 rounded-full font-medium">
-                    {ev.category}
-                  </span>
+              {!filteredEvents.length ? (
+                <div className="text-center py-4 text-gray-500">
+                  No events found.
                 </div>
-              ))}
+              ) : (
+                filteredEvents.map((ev) => (
+                  <div
+                    key={ev.id}
+                    onClick={() => {
+                      setSelectedEvent(ev);
+                      setShowRegistrationForm(false);
+                    }}
+                    className={`
+                      p-4 border-2 rounded-xl cursor-pointer transition-all duration-200
+                      ${
+                        selectedEvent?.id === ev.id
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-blue-300 hover:shadow-md hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <h3 className="font-semibold text-gray-900 mb-3 text-base leading-tight">{ev.title}</h3>
+                    <div className="flex items-center text-sm text-gray-600 mb-3">
+                      <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                      {new Date(ev.date).toLocaleDateString()}
+                    </div>
+                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1.5 rounded-full font-medium">
+                      {ev.category}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </aside>
@@ -82,10 +85,23 @@ function EventRegistrationPage() {
           <div className="max-w-6xl mx-auto px-6 py-8">
             {/* Page Heading */}
             <div className="mb-8">
-              <h1 className="text-4xl font-bold tracking-tight mb-3 text-gray-900">Event Registration</h1>
-              <p className="text-xl text-gray-600 leading-relaxed">
-                Select an event to view details and register
-              </p>
+              {selectedEvent ? (
+                <>
+                  <h1 className="text-4xl font-bold tracking-tight mb-3 text-gray-900">
+                    {selectedEvent.title}
+                  </h1>
+                  <p className="text-xl text-gray-600 leading-relaxed">
+                    {selectedEvent.description}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-4xl font-bold tracking-tight mb-3 text-gray-900">Event Registration</h1>
+                  <p className="text-xl text-gray-600 leading-relaxed">
+                    Select an event to view details and register
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Event Details */}
@@ -98,7 +114,7 @@ function EventRegistrationPage() {
                       <img
                         src={selectedEvent.image}
                         alt={selectedEvent.title}
-                        className="w-full h-80 object-cover"
+                        className="w-full h-[40rem] object-contain"
                       />
                       {selectedEvent.isFree && (
                         <span className="absolute top-6 right-6 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
@@ -109,9 +125,22 @@ function EventRegistrationPage() {
 
                     {/* Content */}
                     <div className="p-8">
-                      <h1 className="text-3xl font-bold text-gray-900 mb-8 leading-tight">
-                        {selectedEvent.title}
-                      </h1>
+                      <div className="flex justify-between items-center mb-4">
+                        <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+                          {selectedEvent.title}
+                        </h1>
+                        <button
+                          onClick={() => alert('Add to Calendar functionality coming soon!')}
+                          className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-md"
+                          title="Add to Calendar"
+                        >
+                          <CalendarPlus className="w-5 h-5" />
+                          <span className="hidden sm:block">Add to Calendar</span>
+                        </button>
+                      </div>
+                      <p className="text-xl text-gray-600 leading-relaxed mb-8">
+                        {selectedEvent.description}
+                      </p>
 
                       {/* Info Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">

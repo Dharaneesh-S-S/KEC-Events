@@ -7,14 +7,16 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import HomePage from './pages/HomePage';
 import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
-import StudentDashboard from './pages/StudentDashboard';
+import StudentDashboardPage from './pages/StudentDashboardPage'; // Updated import
 import ClubDashboard from './pages/ClubDashboard';
 import ContactsPage from './pages/ContactsPage';
-import CalendarPage from './pages/CalendarPage';
+import ClubContactsPage from './pages/ClubContactsPage'; // New Import
+import StudentNotificationsPage from './pages/StudentNotificationsPage'; // Updated import
 import EventRegistrationPage from './pages/EventRegistrationPage';
 import CreateEventPage from './pages/CreateEventPage';
 import ManageEventsPage from './pages/ManageEventsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import ClubNotificationsPage from './pages/ClubNotificationsPage'; // New Import
 import VenueBookingPage from './pages/VenueBookingPage';
 import CCBookingPage from './pages/CCBookingPage';
 import SeminarHallBookingPage from './pages/SeminarHallBookingPage';
@@ -27,6 +29,8 @@ import ClubVenueBookingsDashboard from './pages/ClubVenueBookingsDashboard';
 import EditEventPage from './pages/EditEventPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AdminDashboard from './pages/AdminDashboard';
+import ClubDetailsPage from './pages/ClubDetailsPage'; // New Import
+import LabInchargeCalendarPage from './pages/LabInchargeCalendarPage'; // New Import
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRole }) {
@@ -57,10 +61,10 @@ function AppRoutes() {
 
       {/* Student Routes */}
       <Route
-        path="/dashboard/student"
+        path="/student-dashboard"
         element={
           <ProtectedRoute requiredRole="student">
-            <StudentDashboard />
+            <StudentDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -102,7 +106,15 @@ function AppRoutes() {
         path="/club/notifications"
         element={
           <ProtectedRoute requiredRole="club">
-            <NotificationsPage />
+            <ClubNotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/contacts"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <ClubContactsPage />
           </ProtectedRoute>
         }
       />
@@ -111,6 +123,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="club">
             <AnalyticsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/club/details"
+        element={
+          <ProtectedRoute requiredRole="club">
+            <ClubDetailsPage />
           </ProtectedRoute>
         }
       />
@@ -128,7 +148,7 @@ function AppRoutes() {
         path="/calendar"
         element={
           <ProtectedRoute>
-            <CalendarPage />
+            <StudentNotificationsPage />
           </ProtectedRoute>
         }
       />
@@ -225,13 +245,23 @@ function AppRoutes() {
         }
       />
 
+      {/* Lab Incharge Route */}
+      <Route
+        path="/lab-incharge/calendar"
+        element={
+          <ProtectedRoute requiredRole="labIncharge">
+            <LabInchargeCalendarPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Dashboard Redirect */}
       <Route
         path="/dashboard"
         element={
           user ? (
             <Navigate
-              to={user.role === 'admin' ? '/dashboard/admin' : user.role === 'club' ? '/dashboard/club' : '/dashboard/student'}
+              to={user.role === 'admin' ? '/dashboard/admin' : user.role === 'club' ? '/dashboard/club' : user.role === 'labIncharge' ? '/lab-incharge/calendar' : '/student-dashboard'}
               replace
             />
           ) : (

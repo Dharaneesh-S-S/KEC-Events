@@ -3,40 +3,60 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Trash2, Calendar, MapPin, Users, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { apiRequest } from '../services/api';
+// import { apiRequest } from '../services/api'; // Removed apiRequest import
 
 function ManageEventsPage() {
   const navigate = useNavigate();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState([
+    {
+      _id: '1',
+      title: 'Annual Tech Fest',
+      date: new Date(2024, 9, 20).toISOString(), // Oct 20, 2024
+      venue: 'Main Auditorium',
+      teamSize: '1-3 members',
+      category: 'Technical',
+      isFree: true,
+      image: 'https://picsum.photos/seed/techfest/400/200',
+    },
+    {
+      _id: '2',
+      title: 'Cultural Extravaganza',
+      date: new Date(2024, 10, 15).toISOString(), // Nov 15, 2024
+      venue: 'Amphitheater',
+      teamSize: 'Individual',
+      category: 'Cultural',
+      isFree: false,
+      image: 'https://picsum.photos/seed/cultural/400/200',
+    },
+    {
+      _id: '3',
+      title: 'Sports Day Challenge',
+      date: new Date(2024, 11, 5).toISOString(), // Dec 5, 2024
+      venue: 'Sports Complex',
+      teamSize: 'Teams of 5',
+      category: 'Sports',
+      isFree: true,
+      image: 'https://picsum.photos/seed/sports/400/200',
+    },
+    {
+      _id: '4',
+      title: 'AI Workshop Series',
+      date: new Date(2025, 0, 10).toISOString(), // Jan 10, 2025
+      venue: 'CSE Block - Lab 3',
+      teamSize: 'Individual',
+      category: 'Workshop',
+      isFree: false,
+      image: 'https://picsum.photos/seed/aiworkshop/400/200',
+    },
+  ]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
 
-  const fetchEvents = async () => {
-    try {
-      setLoading(true);
-      const data = await apiRequest('/events/club');
-      const list = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.events)
-        ? data.events
-        : Array.isArray(data?.data)
-        ? data.data
-        : [];
-      setEvents(list);
-      setError(null);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to fetch events. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  // Removed fetchEvents and useEffect for backend data fetching to display sample UI
+  // This data is static and for UI demonstration only.
+  // To re-enable backend fetching, uncomment the fetchEvents function and useEffect hook, and re-add the apiRequest import.
 
   const handleEdit = (ev) => {
     navigate(`/club/edit-event/${ev._id}`, { state: { event: ev } });
@@ -51,7 +71,7 @@ function ManageEventsPage() {
     if (!eventToDelete) return;
 
     try {
-      await apiRequest(`/events/${eventToDelete._id}`, { method: 'DELETE' });
+      // await apiRequest(`/events/${eventToDelete._id}`, { method: 'DELETE' }); // Original line commented out
       alert(`Event “${eventToDelete.title}” deleted successfully!`);
       setEvents(events.filter((e) => e._id !== eventToDelete._id));
       setShowDeleteModal(false);
@@ -85,7 +105,10 @@ function ManageEventsPage() {
           <h3 className="text-xl font-semibold text-gray-900 mb-3">Error Loading Events</h3>
           <p className="text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">{error}</p>
           <button
-            onClick={fetchEvents}
+            onClick={() => {
+              // Re-enable backend fetching if needed
+              // fetchEvents();
+            }}
             className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
           >
             Try Again
@@ -177,29 +200,12 @@ function ManageEventsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Back Button */}
-      <button
-        onClick={() => navigate('/dashboard/club')}
-        className="fixed top-6 left-6 z-50 p-3 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm"
-        title="Go Back to Dashboard"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-      </button>
-
       <Navbar showSort={false} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         {/* Header Section */}
-        <div className="mb-12">
-          <button
-            onClick={() => navigate('/dashboard/club')}
-            className="text-blue-600 hover:text-blue-700 mb-6 transition-colors duration-200 font-medium"
-          >
-            ← Back to Dashboard
-          </button>
+        <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold mb-4 leading-tight text-gray-900">Manage Events</h1>
-          <p className="text-xl text-gray-600 leading-relaxed">Edit or delete your club events</p>
+          <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">Edit or delete your club events</p>
         </div>
 
         {renderContent()}

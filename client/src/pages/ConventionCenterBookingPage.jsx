@@ -10,14 +10,12 @@ import {
   Settings,
   LogOut,
   Globe,
-  Menu,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import Sidebar from '../components/Sidebar';
+import Navbar from '../components/Navbar'; // Import Navbar component
 import { bookingsAPI, apiRequest } from '../services/api';
 
 function ConventionCenterBookingPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -163,51 +161,10 @@ function ConventionCenterBookingPage() {
 
   /* ---------- JSX ---------- */
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="min-h-screen bg-gray-50">
+      <Navbar showBackButton={true} showSearch={false} />
 
-      <div className="flex-1 lg:ml-0">
-        {/* Navbar */}
-        <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden p-2 text-gray-600 hover:text-orange-600"
-                >
-                  <Menu className="w-6 h-6" />
-                </button>
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">KEC</span>
-                  </div>
-                  <span className="text-xl font-bold text-gray-900">Fests</span>
-                </div>
-              </div>
-
-              <span className="text-lg font-medium text-gray-700">
-                Convention Center Booking
-              </span>
-
-              <div className="flex items-center space-x-4">
-                <button className="p-2 text-gray-600 hover:text-orange-600">
-                  <Settings className="w-6 h-6" />
-                </button>
-                <button className="p-2 text-gray-600 hover:text-orange-600">
-                  <Globe className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  <LogOut className="w-4 h-4" /> Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-
+      <div className="flex-1 lg:ml-0 pt-24"> {/* Add pt-24 for padding */}
         {/* Form */}
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">

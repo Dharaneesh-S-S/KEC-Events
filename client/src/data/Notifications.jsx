@@ -31,5 +31,37 @@ export const notifications = [
     type: 'venue_booked',
     timestamp: '2025-01-12T09:15:00Z',
     read: true
+  },
+  {
+    id: '5',
+    title: 'Event Cancelled',
+    message: 'The "Art of Coding" workshop scheduled for Feb 25 has been cancelled.',
+    type: 'event_cancelled',
+    timestamp: '2025-02-20T10:00:00Z',
+    read: false
+  },
+  {
+    id: '6',
+    title: 'New Feature Alert',
+    message: 'Check out the new analytics dashboard for event organizers!',
+    type: 'system_update',
+    timestamp: '2025-02-18T15:30:00Z',
+    read: true
+  },
+  {
+    id: '7',
+    title: 'Meeting Reminder',
+    message: 'Reminder: Department head meeting tomorrow at 10 AM in the conference room.',
+    type: 'meeting_reminder',
+    timestamp: '2025-02-22T09:00:00Z',
+    read: false
+  },
+  {
+    id: '8',
+    title: 'Culture Fest Updates',
+    message: 'Culture Fest 2025: New schedule released. Check the Events page for details.',
+    type: 'event_update',
+    timestamp: '2025-02-21T11:45:00Z',
+    read: false
   }
 ];

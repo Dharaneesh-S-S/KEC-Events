@@ -13,12 +13,11 @@ import {
   User,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import Sidebar from '../components/Sidebar';
+import Navbar from '../components/Navbar'; // Import Navbar component
 import { apiRequest } from '../services/api';
 
 function CCBookingPage() {
   const { departmentSlug } = useParams();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -109,11 +108,11 @@ function CCBookingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="min-h-screen bg-gray-50">
+      <Navbar showBackButton={true} showSearch={true} searchPlaceholder="Search Departments..." />
 
       {/* Main */}
-      <div className="flex-1 lg:ml-0 flex">
+      <div className="flex pt-16">
         {/* Departments (lg+) */}
         <aside className="w-64 bg-white shadow-sm border-r border-gray-200 hidden lg:block">
           <div className="p-4 border-b border-gray-200">
@@ -147,78 +146,32 @@ function CCBookingPage() {
         </aside>
 
         {/* Content */}
-        <section className="flex-1">
-          {/* Top Navbar */}
-          <nav className="bg-white shadow-sm border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
-                {/* left */}
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="lg:hidden p-2 text-gray-600 hover:text-blue-600"
-                  >
-                    <Menu className="w-6 h-6" />
-                  </button>
-
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">KEC</span>
-                    </div>
-                    <span className="text-xl font-bold text-gray-900">Fests</span>
-                  </div>
+        <section className="flex-1 min-w-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          
+            {/* Main Content */}
+            <main className="p-6">
+              {/* Loading & Error */}
+              {loading && (
+                <div className="w-full flex items-center justify-center py-16">
+                  <div className="animate-spin h-8 w-8 border-4 border-blue-200 border-t-blue-600 rounded-full" />
                 </div>
-
-                <span className="text-lg font-medium text-gray-700">CC Booking</span>
-
-                {/* right */}
-                <div className="flex items-center space-x-4">
-                  <button className="p-2 text-gray-600 hover:text-blue-600">
-                    <Settings className="w-6 h-6" />
-                  </button>
-                  <button className="p-2 text-gray-600 hover:text-blue-600">
-                    <Globe className="w-6 h-6" />
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
+              )}
+              {error && !loading && (
+                <div className="mb-4 p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
+                  {error}
                 </div>
+              )}
+              {/* header */}
+              <div className="mb-6 text-center">
+                
+                <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">
+                  CC Booking
+                </h1>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                  Select a computer center to book for your event
+                </p>
               </div>
-            </div>
-          </nav>
-
-          {/* Main Content */}
-          <main className="p-6">
-            {/* Loading & Error */}
-            {loading && (
-              <div className="w-full flex items-center justify-center py-16">
-                <div className="animate-spin h-8 w-8 border-4 border-blue-200 border-t-blue-600 rounded-full" />
-              </div>
-            )}
-            {error && !loading && (
-              <div className="mb-4 p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-            {/* header */}
-            <div className="mb-6">
-              <button
-                onClick={() => navigate('/club/venue-booking')}
-                className="text-blue-600 hover:text-blue-700 mb-4 flex items-center space-x-2"
-              >
-                ← Back to Venue Booking
-              </button>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                CC Booking — {selectedDepartment}
-              </h1>
-              <p className="text-gray-600">
-                Select a computer center to book for your event
-              </p>
-            </div>
 
             {/* mobile dept selector + view toggle */}
             <div className="lg:hidden mb-6 flex items-center gap-3">
@@ -257,7 +210,7 @@ function CCBookingPage() {
                   >
                     <div className="relative">
                       <img
-                        src={v.thumbnail || (Array.isArray(v.images) && v.images[0]) || v.image || 'https://via.placeholder.com/600x300?text=Venue'}
+                        src={v.thumbnail || (Array.isArray(v.images) && v.images[0]) || v.image || 'https://via.placeholder.com/600x300?text=Default+CC+Image'}
                         alt={v.name}
                         className="w-full h-48 object-cover"
                       />
@@ -345,7 +298,7 @@ function CCBookingPage() {
                         >
                           <div className="relative">
                             <img
-                              src={v.thumbnail || (Array.isArray(v.images) && v.images[0]) || v.image || 'https://via.placeholder.com/600x300?text=Venue'}
+                              src={v.thumbnail || (Array.isArray(v.images) && v.images[0]) || v.image || 'https://via.placeholder.com/600x300?text=Default+CC+Image'}
                               alt={v.name}
                               className="w-full h-40 object-cover"
                             />
@@ -383,6 +336,7 @@ function CCBookingPage() {
               </div>
             )}
           </main>
+          </div>
         </section>
       </div>
     </div>

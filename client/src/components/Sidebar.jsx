@@ -1,6 +1,6 @@
 // Sidebar.jsx
 import React from 'react';
-import { X, Plus, Settings, Bell, Home, Mail, Edit } from 'lucide-react';
+import { X, Plus, Settings, Bell, MapPin, Mail, Edit } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -8,7 +8,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
 
   const menuItems = [
-    { icon: Home, label: 'Venue Booking', path: '/club/venue-booking' },
+    { icon: MapPin, label: 'Venue Booking', path: '/club/venue-booking' },
     { icon: Plus, label: 'Create Events', path: '/club/create-event' },
     { icon: Edit, label: 'Manage Events', path: '/club/manage-events' },
     { icon: Bell, label: 'Notifications', path: '/club/notifications' },

@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   /* ---------- Derived list ---------- */
@@ -42,33 +42,8 @@ function HomePage() {
     else navigate('/login');
   };
 
-  const handleBack = () => {
-    if (isAuthenticated && user) {
-      if (user.role === 'admin') {
-        navigate('/dashboard/admin');
-      } else if (user.role === 'club') {
-        navigate('/dashboard/club');
-      } else {
-        navigate('/dashboard/student');
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Back Button for logged-in users */}
-      {isAuthenticated && (
-        <button
-          onClick={handleBack}
-          className="fixed top-6 left-6 z-50 p-3 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm"
-          title="Go Back to Dashboard"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-        </button>
-      )}
-
       <Navbar onSearch={setSearchQuery} onSort={setSortBy} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24"> 
