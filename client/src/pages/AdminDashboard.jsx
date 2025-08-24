@@ -26,6 +26,7 @@ const AdminDashboard = () => {
     department: '',
     description: '',
     role: 'club', // Default role to 'club'
+    password: '',
     labPhoneNumber: '',
     labName: '',
   });
@@ -136,6 +137,10 @@ const AdminDashboard = () => {
       }
     }
 
+    if (formData.role === 'labIncharge' && !formData.password) {
+      newErrors.password = 'Password is required for Lab Incharge';
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setError(Object.values(newErrors).join(', '));
       return;
@@ -146,7 +151,18 @@ const AdminDashboard = () => {
     setSuccess('');
 
     try {
-      const response = await adminAPI.createClub(formData); // This API call needs to be generalized on backend
+      let response;
+      if (formData.role === 'club') {
+        response = await adminAPI.createClub(formData); 
+      } else if (formData.role === 'labIncharge') {
+        // For lab faculty, we need a password field in the form
+        // As per the requirement, admin creates the account with a password
+        // The backend will hash it.
+        const { name, email, password, department, labName, labPhoneNumber } = formData;
+        response = await adminAPI.createLabFaculty({ name, email, password, department, labName, labPhoneNumber });
+      } else {
+        throw new Error('Invalid role selected');
+      }
       
       // Show success message
       setSuccess(`${formData.role === 'club' ? 'Club' : formData.role === 'labIncharge' ? 'Lab Incharge' : 'User'} created successfully!`);
@@ -163,6 +179,7 @@ const AdminDashboard = () => {
         department: '',
         description: '',
         role: 'club',
+        password: '',
         labPhoneNumber: '',
         labName: '',
       });
@@ -516,6 +533,24 @@ const AdminDashboard = () => {
                 />
               </div>
             </div>
+
+            {formData.role === 'labIncharge' && (
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter password for lab faculty"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">

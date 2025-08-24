@@ -2,6 +2,7 @@
 import User from '../models/User.js';
 import Event from '../models/Event.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 // Get admin dashboard statistics
 export const getAdminStats = async (req, res) => {
@@ -276,7 +277,47 @@ export const getClubById = async (req, res) => {
   }
 };
 
+export const createLabFaculty = async (req, res) => {
+  try {
+    const { name, email, password, department } = req.body;
 
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newLabFaculty = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'labFaculty',
+      department,
+      status: 'active',
+    });
+
+    await newLabFaculty.save();
+
+    const labFacultyData = {
+      id: newLabFaculty._id,
+      name: newLabFaculty.name,
+      email: newLabFaculty.email,
+      role: newLabFaculty.role,
+      department: newLabFaculty.department,
+      status: newLabFaculty.status,
+      createdAt: newLabFaculty.createdAt,
+    };
+
+    res.status(201).json({
+      message: 'Lab Faculty created successfully',
+      labFaculty: labFacultyData,
+    });
+  } catch (error) {
+    console.error('Error creating lab faculty:', error);
+    res.status(500).json({ message: 'Failed to create lab faculty', error: error.message });
+  }
+};
 
 // Get all departments
 export const getDepartments = async (req, res) => {

@@ -41,7 +41,9 @@ function LoginPage() {
             navigate('/dashboard/admin');
           } else if (userRole === 'club') {
             navigate('/dashboard/club');
-          } else {
+          } else if (userRole === 'labFaculty') {
+            navigate('/lab-incharge/calendar');
+          }else {
             navigate('/');
           }
         }, 300);

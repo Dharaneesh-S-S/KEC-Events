@@ -7,7 +7,8 @@ import {
   updateClub, 
   deleteClub, 
   getClubById,
-  getDepartments
+  getDepartments,
+  createLabFaculty
 } from '../controller/adminController.js';
 import { verifyAdmin } from '../middleware/auth.js';
 
@@ -25,6 +26,9 @@ router.post('/clubs', createClub);
 router.get('/clubs/:id', getClubById);
 router.put('/clubs/:id', updateClub);
 router.delete('/clubs/:id', deleteClub);
+
+// Lab Faculty management routes
+router.post('/lab-faculty', createLabFaculty);
 
 // Department management
 router.get('/departments', getDepartments);

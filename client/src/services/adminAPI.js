@@ -26,6 +26,14 @@ export const adminAPI = {
     });
   },
 
+  // Create a new lab faculty
+  createLabFaculty: async (labFacultyData) => {
+    return await apiRequest('/admin/lab-faculty', {
+      method: 'POST',
+      body: JSON.stringify(labFacultyData)
+    });
+  },
+
   // Update club details
   updateClub: async (clubId, clubData) => {
     return await apiRequest(`/admin/clubs/${clubId}`, {
