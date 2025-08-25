@@ -114,7 +114,7 @@ function EventRegistrationPage() {
                       <img
                         src={selectedEvent.image}
                         alt={selectedEvent.title}
-                        className="w-full h-[40rem] object-contain"
+                        className="w-full h-[40rem] object-contain mt-8"
                       />
                       {selectedEvent.isFree && (
                         <span className="absolute top-6 right-6 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
@@ -126,9 +126,9 @@ function EventRegistrationPage() {
                     {/* Content */}
                     <div className="p-8">
                       <div className="flex justify-between items-center mb-4">
-                        <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+                        {/* <h1 className="text-3xl font-bold text-gray-900 leading-tight">
                           {selectedEvent.title}
-                        </h1>
+                        </h1> */}
                         <button
                           onClick={() => alert('Add to Calendar functionality coming soon!')}
                           className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-md"
@@ -138,9 +138,9 @@ function EventRegistrationPage() {
                           <span className="hidden sm:block">Add to Calendar</span>
                         </button>
                       </div>
-                      <p className="text-xl text-gray-600 leading-relaxed mb-8">
+                      {/* <p className="text-xl text-gray-600 leading-relaxed mb-8">
                         {selectedEvent.description}
-                      </p>
+                      </p> */}
 
                       {/* Info Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">

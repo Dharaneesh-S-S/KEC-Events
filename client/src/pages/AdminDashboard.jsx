@@ -7,7 +7,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   
   // Tab state
-  const [activeTab, setActiveTab] = useState('clubs');
+  const [activeTab, setActiveTab] = useState('club-details'); // Default to new 'club-details' tab
   
   // Club management state
   const [clubs, setClubs] = useState([]);
@@ -19,25 +19,39 @@ const AdminDashboard = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [newClubName, setNewClubName] = useState('');
+  const [editingClub, setEditingClub] = useState(null); // New state for tracking club being edited
+  const [searchTerm, setSearchTerm] = useState(''); // New state for search term
+  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
   
   const [formData, setFormData] = useState({
+    _id: null, // Add _id to formData for editing
     name: '',
     email: '',
     department: '',
     description: '',
     role: 'club', // Default role to 'club'
     password: '',
-    labPhoneNumber: '',
-    labName: '',
   });
 
   // Venue management state
   const [venues, setVenues] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
-  const [showVenueModal, setShowVenueModal] = useState(false);
   const [editingVenue, setEditingVenue] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [venueToDelete, setVenueToDelete] = useState(null);
+  const [venueSearchTerm, setVenueSearchTerm] = useState(''); // New state for venue search term
+  
+  // Staff management state
+  const [staff, setStaff] = useState([]);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState(null);
+  const [staffFormData, setStaffFormData] = useState({
+    name: '',
+    email: '',
+    role: '',
+    department: '',
+    contactNumber: '',
+  });
   
   const [venueFormData, setVenueFormData] = useState({
     name: '',
@@ -47,8 +61,6 @@ const AdminDashboard = () => {
     capacity: '',
     facultyInCharge: '',
     facultyContact: '',
-    labAssistant: '',
-    labAssistantContact: '',
     features: '',
     description: '',
     specialInstructions: '',
@@ -79,13 +91,15 @@ const AdminDashboard = () => {
     const fetchInitialData = async () => {
       try {
         setFetching(true);
-        const [departmentsData, clubsData] = await Promise.all([
+        const [departmentsData, clubsData, staffData] = await Promise.all([
           adminAPI.getDepartments(),
-          adminAPI.getClubs()
+          adminAPI.getClubs(),
+          adminAPI.getStaff() // Fetch staff data as well
         ]);
         
         setDepartments(departmentsData || []);
         setClubs(clubsData || []);
+        setStaff(staffData || []); // Set staff data
       } catch (err) {
         setError('Failed to fetch initial data. Please refresh the page.');
         console.error('Error fetching initial data:', err);
@@ -97,14 +111,41 @@ const AdminDashboard = () => {
     fetchInitialData();
   }, []);
 
-  // Fetch venues when department is selected
+  // Fetch venues when department is selected, or staff when staff tab is active
   useEffect(() => {
-    if (selectedDepartment && activeTab === 'venues') {
+    if (activeTab === 'venue-details') { // Change to venue-details
       fetchVenues();
-    } else {
-      setVenues([]);
+    } else if (activeTab === 'staff-management') {
+      fetchStaff();
+    } else if (activeTab === 'club-details') { // Add this condition to refetch clubs when club-details tab is active
+      const fetchClubsData = async () => {
+        setFetching(true);
+        try {
+          const clubsData = await adminAPI.getClubs();
+          setClubs(clubsData || []);
+        } catch (err) {
+          setError('Failed to fetch clubs. Please refresh the page.');
+          console.error('Error fetching clubs:', err);
+        } finally {
+          setFetching(false);
+        }
+      };
+      fetchClubsData();
     }
-  }, [selectedDepartment, activeTab]);
+     else {
+      setVenues([]);
+      setStaff([]);
+    }
+  }, [activeTab, selectedDepartment]);
+
+  // Filter venues based on search term
+  const filteredVenues = venues.filter(venue => 
+    venue.name.toLowerCase().includes(venueSearchTerm.toLowerCase()) ||
+    venue.location.toLowerCase().includes(venueSearchTerm.toLowerCase()) ||
+    venue.department.toLowerCase().includes(venueSearchTerm.toLowerCase()) ||
+    venue.facultyInCharge.toLowerCase().includes(venueSearchTerm.toLowerCase()) ||
+    venue.description.toLowerCase().includes(venueSearchTerm.toLowerCase())
+  );
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -128,19 +169,6 @@ const AdminDashboard = () => {
       newErrors.department = 'Department is required for clubs';
     }
 
-    if (formData.role === 'labIncharge') {
-      if (!formData.labPhoneNumber) newErrors.labPhoneNumber = 'Phone Number is required for Lab Incharge';
-      if (!formData.labName) newErrors.labName = 'Lab Name is required for Lab Incharge';
-      // Basic phone number validation
-      if (formData.labPhoneNumber && !/^\d{10}$/.test(formData.labPhoneNumber)) {
-        newErrors.labPhoneNumber = 'Phone number must be 10 digits';
-      }
-    }
-
-    if (formData.role === 'labIncharge' && !formData.password) {
-      newErrors.password = 'Password is required for Lab Incharge';
-    }
-
     if (Object.keys(newErrors).length > 0) {
       setError(Object.values(newErrors).join(', '));
       return;
@@ -152,48 +180,113 @@ const AdminDashboard = () => {
 
     try {
       let response;
-      if (formData.role === 'club') {
-        response = await adminAPI.createClub(formData); 
-      } else if (formData.role === 'labIncharge') {
-        // For lab faculty, we need a password field in the form
-        // As per the requirement, admin creates the account with a password
-        // The backend will hash it.
-        const { name, email, password, department, labName, labPhoneNumber } = formData;
-        response = await adminAPI.createLabFaculty({ name, email, password, department, labName, labPhoneNumber });
+      if (editingClub) {
+        // Update existing club
+        // If password is provided, include it in the update, otherwise, don't send it
+        const updateData = formData.password ? { ...formData } : { ...formData, password: undefined };
+        response = await adminAPI.updateClub(editingClub._id, updateData);
       } else {
-        throw new Error('Invalid role selected');
+        // Create new club
+        response = await adminAPI.createClub(formData);
       }
       
       // Show success message
-      setSuccess(`${formData.role === 'club' ? 'Club' : formData.role === 'labIncharge' ? 'Lab Incharge' : 'User'} created successfully!`);
+      setSuccess(`Club ${editingClub ? 'updated' : 'created'} successfully!`);
       
-      // Store generated password and club name (or user name for lab incharge) for modal
+      // Clear generated password and new club name after update
+      if (editingClub) {
+        setGeneratedPassword('');
+        setNewClubName('');
+      } else {
+        // Only show password modal for new club creation
       setGeneratedPassword(response.generatedPassword);
-      setNewClubName(formData.name); // Renaming this state to newUserDisplayName might be better long term
+        setNewClubName(formData.name); 
       setShowPasswordModal(true);
+      }
       
-      // Clear form
+      // Clear form and editing state
       setFormData({
+        _id: null,
         name: '',
         email: '',
         department: '',
         description: '',
         role: 'club',
         password: '',
-        labPhoneNumber: '',
-        labName: '',
       });
+      setEditingClub(null);
       
-      // Refresh clubs list (or relevant list based on role)
-      if (formData.role === 'club') {
+      // Refresh clubs list
         const updatedClubs = await adminAPI.getClubs();
         setClubs(updatedClubs || []);
-      } else {
-        // Potentially refresh a list of lab incharge users if such a list existed
-      }
       
     } catch (err) {
-      setError(err.message || 'Failed to create user. Please try again.');
+      setError(err.message || `Failed to ${editingClub ? 'update' : 'create'} club. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle form cancellation
+  const handleCancelEdit = () => {
+    setEditingClub(null);
+    setFormData({
+      _id: null,
+      name: '',
+      email: '',
+      department: '',
+      description: '',
+      role: 'club',
+      password: '',
+    });
+    setError('');
+    setSuccess('');
+  };
+
+  // Handle club editing
+  const handleEditClub = (club) => {
+    setEditingClub(club);
+    setFormData({
+      _id: club._id,
+      name: club.name,
+      email: club.email,
+      department: club.department,
+      description: club.description,
+      role: 'club', // Role is always 'club' for clubs
+      password: '', // Password is not pre-filled for security reasons
+    });
+    // Switch to Club Details tab to display the pre-filled form
+    setActiveTab('club-details');
+  };
+
+  // Handle club deletion
+  const handleDeleteClub = async (id) => {
+    if (window.confirm('Are you sure you want to delete this club?')) {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+      try {
+        await adminAPI.deleteClub(id);
+        setSuccess('Club deleted successfully!');
+        const updatedClubs = await adminAPI.getClubs();
+        setClubs(updatedClubs || []);
+    } catch (err) {
+        setError(err.message || 'Failed to delete club. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Staff API functions
+  const fetchStaff = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getStaff();
+      setStaff(response || []);
+    } catch (err) {
+      setError('Failed to fetch staff details.');
+      console.error('Error fetching staff:', err);
     } finally {
       setLoading(false);
     }
@@ -324,6 +417,7 @@ const AdminDashboard = () => {
   };
 
   const openVenueModal = (venue = null) => {
+    // Only allow editing existing venues through the modal
     if (venue) {
       setEditingVenue(venue);
       setVenueFormData({
@@ -334,8 +428,6 @@ const AdminDashboard = () => {
         capacity: venue.capacity?.toString() || '',
         facultyInCharge: venue.facultyInCharge || '',
         facultyContact: venue.facultyContact || '',
-        labAssistant: venue.labAssistant || '',
-        labAssistantContact: venue.labAssistantContact || '',
         features: venue.features?.join(', ') || '',
         description: venue.description || '',
         specialInstructions: venue.specialInstructions || '',
@@ -351,45 +443,121 @@ const AdminDashboard = () => {
           wifi: false
         }
       });
-    } else {
-      setEditingVenue(null);
-      setVenueFormData({
-        name: '',
-        venueType: 'cc',
-        location: '',
-        department: selectedDepartment,
-        capacity: '',
-        facultyInCharge: '',
-        facultyContact: '',
-        labAssistant: '',
-        labAssistantContact: '',
-        features: '',
-        description: '',
-        specialInstructions: '',
-        availableLogistics: {
-          projector: false,
-          mic: false,
-          speakers: false,
-          whiteboard: false,
-          ac: false,
-          stage: false,
-          soundSystem: false,
-          stageLighting: false,
-          wifi: false
-        }
-      });
+      // setShowVenueModal(true); // Removed as modal is now directly in tab
+      setActiveTab('venue-details'); // Switch to venue-details tab when editing
     }
-    setShowVenueModal(true);
   };
 
   const closeVenueModal = () => {
-    setShowVenueModal(false);
     setEditingVenue(null);
   };
 
   const handleDeleteClick = (venue) => {
     setVenueToDelete(venue);
     setShowDeleteConfirm(true);
+  };
+
+  // Staff form handlers
+  const handleStaffInputChange = (e) => {
+    const { name, value } = e.target;
+    setStaffFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleStaffSubmit = async (e) => {
+    e.preventDefault();
+    
+    const newErrors = {};
+    if (!staffFormData.name) newErrors.name = 'Name is required';
+    if (!staffFormData.email) newErrors.email = 'Email is required';
+    if (!staffFormData.role) newErrors.role = 'Role is required';
+
+    if (Object.keys(newErrors).length > 0) {
+      setError(Object.values(newErrors).join(', '));
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      let response;
+      if (editingStaff) {
+        response = await adminAPI.updateStaff(editingStaff._id, staffFormData);
+      } else {
+        response = await adminAPI.createStaff(staffFormData);
+      }
+      
+      setSuccess(`Staff ${editingStaff ? 'updated' : 'created'} successfully!`);
+      
+      // Clear form
+      setStaffFormData({
+        name: '',
+        email: '',
+        role: '',
+        department: '',
+        contactNumber: '',
+      });
+      setEditingStaff(null); // Close modal
+      fetchStaff(); // Refresh staff list
+      
+    } catch (err) {
+      setError(err.message || 'Failed to create/update staff. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openStaffModal = (staffMember = null) => {
+    if (staffMember) {
+      setEditingStaff(staffMember);
+      setStaffFormData({
+        name: staffMember.name || '',
+        email: staffMember.email || '',
+        role: staffMember.role || '',
+        department: staffMember.department || '',
+        contactNumber: staffMember.contactNumber || '',
+      });
+      setShowStaffModal(true);
+    } else {
+      setEditingStaff(null);
+      setStaffFormData({
+        name: '',
+        email: '',
+        role: '',
+        department: '',
+        contactNumber: '',
+      });
+      setShowStaffModal(true);
+    }
+  };
+
+  const closeStaffModal = () => {
+    setShowStaffModal(false);
+    setEditingStaff(null);
+    setStaffFormData({
+      name: '',
+      email: '',
+      role: '',
+      department: '',
+      contactNumber: '',
+    });
+  };
+
+  const deleteStaff = async (id) => {
+    try {
+      setLoading(true);
+      await adminAPI.deleteStaff(id);
+      setSuccess('Staff deleted successfully');
+      fetchStaff();
+    } catch (err) {
+      setError(err.message || 'Failed to delete staff.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Clear messages after 5 seconds
@@ -402,6 +570,14 @@ const AdminDashboard = () => {
       return () => clearTimeout(timer);
     }
   }, [success, error]);
+
+  // Filter clubs based on search term
+  const filteredClubs = clubs.filter(club => 
+    club.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    club.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    club.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    club.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (fetching) {
     return (
@@ -438,24 +614,57 @@ const AdminDashboard = () => {
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
               <button
-                onClick={() => setActiveTab('clubs')}
+                onClick={() => setActiveTab('club-details')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'clubs'
+                  activeTab === 'club-details'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                User Management
+                Club Details
+              </button>
+              {/* Remove Club Creation and Club Management tabs */}
+              {/*
+              <button
+                onClick={() => setActiveTab('club-creation')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'club-creation'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Club Creation
               </button>
               <button
-                onClick={() => setActiveTab('venues')}
+                onClick={() => setActiveTab('club-management')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'venues'
+                  activeTab === 'club-management'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Venue Management
+                Club Management
+              </button>
+              */}
+              <button
+                onClick={() => setActiveTab('venue-details')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'venue-details'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Venue Details
+              </button>
+              <button
+                onClick={() => setActiveTab('staff-management')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'staff-management'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Staff Detail Management
               </button>
             </nav>
           </div>
@@ -492,13 +701,12 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* User Management Content */}
-        {activeTab === 'clubs' && (
+        {/* Club Details Content */}
+        {activeTab === 'club-details' && (
           <>
-            {/* Create User Section */}
+            {/* Club Creation Form */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Create New User</h2>
-          
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">{editingClub ? 'Edit Club' : 'Create New Club'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -513,7 +721,7 @@ const AdminDashboard = () => {
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter user's name"
+                      placeholder="Enter club's name"
                 />
               </div>
 
@@ -529,83 +737,12 @@ const AdminDashboard = () => {
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter user's email"
+                      placeholder="Enter club's email"
                 />
               </div>
             </div>
 
-            {formData.role === 'labIncharge' && (
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password *
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter password for lab faculty"
-                />
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                Role *
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Select Role</option>
-                <option value="club">Club</option>
-                <option value="labIncharge">Lab Incharge</option>
-              </select>
-            </div>
-
-            {formData.role === 'labIncharge' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="labPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    id="labPhoneNumber"
-                    name="labPhoneNumber"
-                    value={formData.labPhoneNumber}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter phone number (10 digits)"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="labName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Lab Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="labName"
-                    name="labName"
-                    value={formData.labName}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter lab name"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className={formData.role === 'club' ? 'block' : 'hidden'}>
               <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
                 Department
               </label>
@@ -647,7 +784,51 @@ const AdminDashboard = () => {
               />
             </div>
 
-            <div className="flex justify-end">
+                {editingClub && (
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                      New Password (leave blank to keep current)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                        placeholder="Enter new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                      >
+                        {showPassword ? (
+                          <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.418 0-8-2.686-8-6s3.582-6 8-6a9.957 9.957 0 011.875.175M17 14l-3-3m0 0l-3 3m3-3V3m0 6a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        ) : (
+                          <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-3">
+                  {editingClub && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="px-6 py-2 rounded-md font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                    >
+                      Cancel
+                    </button>
+                  )}
               <button
                 type="submit"
                 disabled={loading}
@@ -660,79 +841,62 @@ const AdminDashboard = () => {
                 {loading ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
+                        {editingClub ? 'Updating...' : 'Creating...'}
                   </div>
                 ) : (
-                  'Create User'
+                      editingClub ? 'Update Club' : 'Create Club'
                 )}
               </button>
             </div>
           </form>
         </div>
 
-        {/* All Users Section */}
+            {/* All Clubs Section (previously Club Management) */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">All Users</h2>
-          
-          {clubs.length === 0 ? (
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">All Clubs</h2>
+              <input
+                type="text"
+                placeholder="Search clubs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {filteredClubs.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">No users found. Create your first user above.</p>
+                  <p className="text-gray-500">No clubs found.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Department / Lab Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone Number
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created Date
-                    </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {clubs.map((user) => (
-                    <tr key={user._id || user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {user.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.email}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {user.role}
-                        </span>
-                      </td>
+                      {filteredClubs.map((club) => (
+                        <tr key={club._id || club.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{club.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{club.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {user.role === 'club' ? (user.department || 'N/A') : (user.labName || 'N/A')}
+                              {club.department || 'N/A'}
                         </span>
                       </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{club.description || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.labPhoneNumber || 'N/A'}
+                            {club.createdAt ? new Date(club.createdAt).toLocaleDateString() : '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                        {user.description || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button onClick={() => handleEditClub(club)} className="text-blue-600 hover:text-blue-900">Edit</button>
+                              <button onClick={() => handleDeleteClub(club._id)} className="text-red-600 hover:text-red-900">Delete</button>
+                            </div>
                       </td>
                     </tr>
                   ))}
@@ -744,140 +908,12 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {/* Venue Management Content */}
-        {activeTab === 'venues' && (
+        {/* Venue Details Content */}
+        {activeTab === 'venue-details' && (
           <>
-            {/* Department Selection */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Venue Management</h2>
-                  <p className="text-gray-600 mt-1">Select a department to manage its venues</p>
-                </div>
-                <div className="flex gap-3 mt-4 sm:mt-0">
-                  <button
-                    onClick={() => clearNonPersistedVenues()}
-                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                    disabled={loading}
-                  >
-                    Clear Non-Persisted
-                  </button>
-                  <button
-                    onClick={() => openVenueModal()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    disabled={!selectedDepartment || loading}
-                  >
-                    Add Venue
-                  </button>
-                </div>
-              </div>
-              
-              <select
-                value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value.trim())}
-                className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
-              >
-                <option value="">Choose a department...</option>
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Venues Table */}
-            {selectedDepartment && (
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Venues in {selectedDepartment}
-                  </h3>
-                </div>
-                
-                {loading ? (
-                  <div className="p-6 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-2">Loading venues...</p>
-                  </div>
-                ) : venues.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500">
-                    No venues found for this department.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty In Charge</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Features</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {venues.map((venue) => (
-                          <tr key={venue._id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{venue.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                {venueTypes.find(t => t.value === venue.venueType)?.label || venue.venueType}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{venue.location}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{venue.capacity}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{venue.facultyInCharge}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{venue.facultyContact}</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
-                              <div className="max-w-xs truncate">{venue.features?.join(', ') || 'None'}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                venue.availability?.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {venue.availability?.maintenanceMode ? 'Maintenance' : venue.availability?.isActive !== false ? 'Active' : 'Inactive'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex space-x-2">
-                                <button onClick={() => openVenueModal(venue)} className="text-blue-600 hover:text-blue-900">Edit</button>
-                                <button onClick={() => handleDeleteClick(venue)} className="text-red-600 hover:text-red-900">Delete</button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Venue Modal */}
-      {showVenueModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {editingVenue ? 'Edit Venue' : 'Add New Venue'}
-                </h3>
-                <button onClick={closeVenueModal} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
+            {/* Venue Creation Form */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">{editingVenue ? 'Edit Venue' : 'Create New Venue'}</h2>
               <form onSubmit={handleVenueSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -971,28 +1007,6 @@ const AdminDashboard = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Lab Assistant</label>
-                    <input
-                      type="text"
-                      name="labAssistant"
-                      value={venueFormData.labAssistant}
-                      onChange={handleVenueInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Lab Assistant Contact</label>
-                    <input
-                      type="tel"
-                      name="labAssistantContact"
-                      value={venueFormData.labAssistantContact}
-                      onChange={handleVenueInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
                 </div>
 
                 <div>
@@ -1067,9 +1081,247 @@ const AdminDashboard = () => {
                 </div>
               </form>
             </div>
+
+            {/* All Venues Section (previously Venue Management) */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">All Venues</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                <input
+                  type="text"
+                  placeholder="Search venues..."
+                  value={venueSearchTerm}
+                  onChange={(e) => setVenueSearchTerm(e.target.value)}
+                  className="w-full sm:w-1/2 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 sm:mb-0"
+                />
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value.trim())}
+                  className="w-full sm:w-1/2 max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:ml-4"
+                  disabled={loading}
+                >
+                  <option value="">Choose a department...</option>
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {loading ? (
+                <div className="p-6 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-600 mt-2">Loading venues...</p>
+                </div>
+              ) : filteredVenues.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">
+                  No venues found for this department.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty In Charge</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Features</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredVenues.map((venue) => (
+                        <tr key={venue._id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{venue.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {venueTypes.find(t => t.value === venue.venueType)?.label || venue.venueType}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{venue.location}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{venue.capacity}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{venue.facultyInCharge}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{venue.facultyContact}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            <div className="max-w-xs truncate">{venue.features?.join(', ') || 'None'}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              venue.availability?.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {venue.availability?.maintenanceMode ? 'Maintenance' : venue.availability?.isActive !== false ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button onClick={() => openVenueModal(venue)} className="text-blue-600 hover:text-blue-900">Edit</button>
+                              <button onClick={() => handleDeleteClick(venue)} className="text-red-600 hover:text-red-900">Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Staff Detail Management Content */}
+        {activeTab === 'staff-management' && (
+          <>
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Manage Staff Details</h2>
+              <form onSubmit={handleStaffSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="staffName" className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                    <input
+                      type="text"
+                      id="staffName"
+                      name="name"
+                      value={staffFormData.name}
+                      onChange={handleStaffInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter staff name"
+                    />
           </div>
+                  <div>
+                    <label htmlFor="staffEmail" className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                    <input
+                      type="email"
+                      id="staffEmail"
+                      name="email"
+                      value={staffFormData.email}
+                      onChange={handleStaffInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter staff email"
+                    />
         </div>
-      )}
+                  <div>
+                    <label htmlFor="staffRole" className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                    <select
+                      id="staffRole"
+                      name="role"
+                      value={staffFormData.role}
+                      onChange={handleStaffInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Select Role</option>
+                      <option value="admin">Admin</option>
+                      <option value="faculty">Faculty</option>
+                      <option value="support">Support</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="staffDepartment" className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select
+                      id="staffDepartment"
+                      name="department"
+                      value={staffFormData.department}
+                      onChange={handleStaffInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Select Department (Optional)</option>
+                      {departments.map((dept) => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="staffContactNumber" className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                    <input
+                      type="tel"
+                      id="staffContactNumber"
+                      name="contactNumber"
+                      value={staffFormData.contactNumber}
+                      onChange={handleStaffInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter contact number"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`px-6 py-2 rounded-md font-medium text-white ${
+                      loading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                    }`}
+                  >
+                    {loading ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </div>
+                    ) : (
+                      editingStaff ? 'Update Staff' : 'Add Staff'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">All Staff</h2>
+              {staff.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No staff found.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {staff.map((s) => (
+                        <tr key={s._id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.email}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                              {s.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.department || 'N/A'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.contactNumber || 'N/A'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button onClick={() => openStaffModal(s)} className="text-blue-600 hover:text-blue-900">Edit</button>
+                              <button onClick={() => deleteStaff(s._id)} className="text-red-600 hover:text-red-900">Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Venue Modal */}
+      {/* Removed as modal is now directly in tab */}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && venueToDelete && (
@@ -1110,7 +1362,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Password Modal */}
+      {/* Password Modal (for new club creation) */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">

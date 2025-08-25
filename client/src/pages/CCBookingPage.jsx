@@ -40,7 +40,7 @@ function CCBookingPage() {
         const params = new URLSearchParams();
         params.append('venueType', 'cc');
         // If a departmentSlug is provided, use it to filter department. Otherwise fetch all CC venues
-        if (slug) params.append('department', slug);
+        // if (slug) params.append('department', slug);
         // fetch a generous page to avoid pagination UX here
         params.append('page', '1');
         params.append('limit', '1000');
@@ -56,7 +56,11 @@ function CCBookingPage() {
 
         setVenues(list);
         setDepartments(formattedDepartments);
-        if (formattedDepartments.length > 0) setSelectedDepartment(formattedDepartments[0].name);
+        if (departmentSlug) {
+          setSelectedDepartment(decodeURIComponent(departmentSlug));
+        } else if (formattedDepartments.length > 0) {
+          setSelectedDepartment(formattedDepartments[0].name);
+        }
       } catch (err) {
         setError('Failed to fetch venues');
         console.error('Error fetching venues:', err);
@@ -210,7 +214,7 @@ function CCBookingPage() {
                   >
                     <div className="relative">
                       <img
-                        src={v.thumbnail || (Array.isArray(v.images) && v.images[0]) || v.image || 'https://via.placeholder.com/600x300?text=Default+CC+Image'}
+                        src={v.thumbnail || (Array.isArray(v.images) && v.images[0]) || v.image || 'https://via.placeholder.com/600x300?text=Computer+Center+Image'}
                         alt={v.name}
                         className="w-full h-48 object-cover"
                       />
@@ -298,7 +302,7 @@ function CCBookingPage() {
                         >
                           <div className="relative">
                             <img
-                              src={v.thumbnail || (Array.isArray(v.images) && v.images[0]) || v.image || 'https://via.placeholder.com/600x300?text=Default+CC+Image'}
+                              src={v.thumbnail || (Array.isArray(v.images) && v.images[0]) || v.image || 'https://via.placeholder.com/600x300?text=Computer+Center+Image'}
                               alt={v.name}
                               className="w-full h-40 object-cover"
                             />
