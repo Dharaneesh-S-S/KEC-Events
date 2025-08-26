@@ -31,6 +31,8 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ClubDetailsPage from './pages/ClubDetailsPage'; // New Import
 import LabInchargeCalendarPage from './pages/LabInchargeCalendarPage'; // New Import
+import StaffPage from './pages/StaffPage';
+import AdminNotificationsPage from './pages/AdminNotificationsPage';
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRole }) {
@@ -241,6 +243,26 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="admin">
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Staff Route */}
+      <Route
+        path="/dashboard/admin/staff"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <StaffPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Notifications Route */}
+      <Route
+        path="/dashboard/admin/notifications"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminNotificationsPage />
           </ProtectedRoute>
         }
       />
