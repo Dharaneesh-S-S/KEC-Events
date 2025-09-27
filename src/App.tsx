@@ -189,130 +189,91 @@ function App() {
     isFree: true
   });
 
-  // Primary Navigation Component
-  const PrimaryNavbar = () => (
-    <nav className="bg-background border-b border-border px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentPage('home')}>
-            <div className="w-8 h-8 bg-brand-blue text-white rounded flex items-center justify-center font-bold">
-              KE
-            </div>
-            <span className="text-xl font-semibold text-foreground">KEC Events</span>
-          </div>
-        </div>
+  const [pageHistory, setPageHistory] = useState<string[]>(['home']);
 
-        <div className="flex items-center space-x-4 flex-1 max-w-md mx-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input 
-              placeholder="Search Events..." 
-              className="pl-10 bg-muted/50 border-none focus-visible:ring-brand-blue"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-32 bg-muted/50 border-none focus:ring-brand-blue focus:ring-offset-0">
-              <SelectValue placeholder="Sort by..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date">Sort by Date</SelectItem>
-              <SelectItem value="popularity">Sort by Popularity</SelectItem>
-              <SelectItem value="deadline">Sort by Deadline</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+  const navigateTo = (page: string) => {
+    setCurrentPage(page);
+    setPageHistory(prevHistory => [...prevHistory, page]);
+  };
 
-        <div className="flex items-center space-x-4">
-          {!user ? (
-            <Button onClick={() => setCurrentPage('login')} className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground">
-              <LogIn className="w-4 h-4 mr-2" />
-              Login
-            </Button>
-          ) : (
-            <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground">
-                <Bell className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground">
-                <Phone className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground">
-                <Home className="w-4 h-4" />
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={user.avatar} />
-                  <AvatarFallback className="bg-muted text-foreground">{user.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium text-foreground">{user.name}</span>
-              </div>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={() => setUser(null)}
-                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    </nav>
-  );
-
-  // Secondary Navigation Component
-  const SecondaryNavbar = () => {
-    if (!user || currentPage === 'login') return null;
-
-    const getNavItems = () => {
-      switch (user.role) {
-        case 'student':
-          return [
-            { label: 'Dashboard', page: 'home', icon: Home },
-            { label: 'Registered Events', page: 'registered', icon: Calendar },
-            { label: 'Profile', page: 'profile', icon: User }
-          ];
-        case 'club':
-          return [
-            { label: 'Dashboard', page: 'home', icon: Home },
-            { label: 'Manage Events', page: 'manage-events', icon: Calendar },
-            { label: 'Create Event', page: 'create-event', icon: Plus },
-            { label: 'Notifications', page: 'notifications', icon: Bell }
-          ];
-        case 'admin':
-          return [
-            { label: 'Dashboard', page: 'admin-dashboard', icon: Settings },
-            { label: 'Events Overview', page: 'home', icon: Calendar },
-            { label: 'Club Management', page: 'admin-dashboard', icon: Building }
-          ];
-        default:
-          return [];
+  const goBack = () => {
+    setPageHistory(prevHistory => {
+      const newHistory = prevHistory.slice(0, prevHistory.length - 1);
+      if (newHistory.length > 0) {
+        setCurrentPage(newHistory[newHistory.length - 1]);
+        return newHistory;
       }
+      setCurrentPage('home'); // Fallback to home if history is empty
+      return ['home'];
+    });
+  };
+
+  // Primary Navigation Component
+  const PrimaryNavbar = () => {
+    const formatPageName = (name: string) => {
+      return name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     };
 
-    const navItems = getNavItems();
-
     return (
-      <nav className="bg-card border-b border-border px-4 py-2">
-        <div className="max-w-7xl mx-auto flex items-center space-x-6">
-          {navItems.map((item) => (
-            <button
-              key={item.page}
-              onClick={() => setCurrentPage(item.page)}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                currentPage === item.page
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              <item.icon className="w-4 h-4" />
-              <span>{item.label}</span>
-            </button>
-          ))}
+      <nav className="bg-background border-b border-border px-4 py-3 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {pageHistory.length > 1 && (
+              <Button variant="ghost" size="icon" onClick={goBack} className="text-muted-foreground hover:bg-muted hover:text-foreground">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            )}
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigateTo('home')}>
+              <div className="w-8 h-8 bg-brand-blue text-white rounded flex items-center justify-center font-bold">
+                KE
+              </div>
+              <span className="text-xl font-semibold text-foreground">KEC Events</span>
+            </div>
+          </div>
+
+          <div className="absolute left-1/2 transform -translate-x-1/2">
+            <span className="text-lg font-semibold text-foreground capitalize">{formatPageName(currentPage)}</span>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {!user ? (
+              <Button onClick={() => navigateTo('login')} className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground">
+                <LogIn className="w-4 h-4 mr-2" />
+                Login
+              </Button>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <Bell className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <Phone className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => navigateTo('home')}>
+                  <Home className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => navigateTo('profile')}>
+                  <User className="w-4 h-4" />
+                </Button>
+                <div className="flex items-center space-x-2">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.avatar} />
+                    <AvatarFallback className="bg-muted text-foreground">{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">{user.name}</span>
+                </div>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => setUser(null)}
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
     );
@@ -359,7 +320,7 @@ function App() {
           <Button 
             onClick={() => {
               setSelectedEvent(event);
-              setCurrentPage('event-details');
+              navigateTo('event-details');
             }}
             className={`bg-primary hover:bg-primary/90 text-primary-foreground`}
           >
@@ -468,7 +429,7 @@ function App() {
                   email: loginData.email,
                   role: role
                 });
-                setCurrentPage('home');
+                navigateTo('home');
               }}
             >
               <LogIn className="w-4 h-4 mr-2" />
@@ -487,15 +448,7 @@ function App() {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => setCurrentPage('home')}
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Events
-          </Button>
-
+          
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1">
               <Card>
@@ -526,18 +479,105 @@ function App() {
             </div>
 
             <div className="lg:col-span-3">
-              {showRegistrationForm ? (
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>Registration Form</CardTitle>
-                      <Button 
-                        variant="outline"
-                        onClick={() => setShowRegistrationForm(false)}
-                      >
-                        Back to Details
+              {/* Event Details Card */}
+              <Card>
+                <div className="relative">
+                  <img
+                    src={selectedEvent.image}
+                    alt={selectedEvent.title}
+                    className="w-full h-64 object-cover rounded-t-lg"
+                  />
+                  {selectedEvent.isFree && (
+                    <Badge className="absolute top-4 right-4 bg-primary hover:bg-primary/90 text-primary-foreground">
+                      Free
+                    </Badge>
+                  )}
+                </div>
+                <CardContent className="p-6">
+                  <h1 className="text-3xl font-bold text-foreground mb-4">
+                    {selectedEvent.title}
+                  </h1>
+                  <p className="text-muted-foreground mb-6">
+                    {selectedEvent.description}
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Event Date</p>
+                          <p className="text-muted-foreground">{selectedEvent.date}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Users className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Team Size</p>
+                          <p className="text-muted-foreground">{selectedEvent.teamSize}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <MapPin className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Venue</p>
+                          <p className="text-muted-foreground">{selectedEvent.venue}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Clock className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Registration Deadline</p>
+                          <p className="text-muted-foreground">{selectedEvent.deadline}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold mb-3">Rules & Guidelines</h3>
+                    <ul className="space-y-2">
+                      {selectedEvent.rules.map((rule, index) => (
+                        <li key={index} className="flex items-start space-x-2">
+                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                          <span className="text-muted-foreground">{rule}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {user?.role === 'student' && (
+                    <Button
+                      onClick={() => setShowRegistrationForm(prev => !prev)} // Toggle form visibility
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      {showRegistrationForm ? 'Hide Registration Form' : 'Register Now'}
+                    </Button>
+                  )}
+
+                  {(user?.role === 'club' || user?.role === 'admin') && (
+                    <div className="flex space-x-3">
+                      <Button variant="outline" className="border-border text-foreground hover:bg-muted">
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Event
+                      </Button>
+                      <Button variant="destructive" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                        <Trash className="w-4 h-4 mr-2" />
+                        Delete Event
                       </Button>
                     </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Registration Form Card (conditionally rendered) */}
+              {showRegistrationForm && user?.role === 'student' && (
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle>Registration Form</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="bg-muted/50 p-6 rounded-lg text-center">
@@ -554,101 +594,6 @@ function App() {
                     </div>
                   </CardContent>
                 </Card>
-              ) : (
-                <div className="space-y-6">
-                  <Card>
-                    <div className="relative">
-                      <img 
-                        src={selectedEvent.image} 
-                        alt={selectedEvent.title}
-                        className="w-full h-64 object-cover rounded-t-lg"
-                      />
-                      {selectedEvent.isFree && (
-                        <Badge className="absolute top-4 right-4 bg-primary hover:bg-primary/90 text-primary-foreground">
-                          Free
-                        </Badge>
-                      )}
-                    </div>
-                    <CardContent className="p-6">
-                      <h1 className="text-3xl font-bold text-foreground mb-4">
-                        {selectedEvent.title}
-                      </h1>
-                      <p className="text-muted-foreground mb-6">
-                        {selectedEvent.description}
-                      </p>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-3">
-                            <Calendar className="w-5 h-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">Event Date</p>
-                              <p className="text-muted-foreground">{selectedEvent.date}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <Users className="w-5 h-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">Team Size</p>
-                              <p className="text-muted-foreground">{selectedEvent.teamSize}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-3">
-                            <MapPin className="w-5 h-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">Venue</p>
-                              <p className="text-muted-foreground">{selectedEvent.venue}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <Clock className="w-5 h-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">Registration Deadline</p>
-                              <p className="text-muted-foreground">{selectedEvent.deadline}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mb-6">
-                        <h3 className="text-xl font-semibold mb-3">Rules & Guidelines</h3>
-                        <ul className="space-y-2">
-                          {selectedEvent.rules.map((rule, index) => (
-                            <li key={index} className="flex items-start space-x-2">
-                              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                              <span className="text-muted-foreground">{rule}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {user?.role === 'student' && (
-                        <Button 
-                          onClick={() => setShowRegistrationForm(true)}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Register Now
-                        </Button>
-                      )}
-
-                      {(user?.role === 'club' || user?.role === 'admin') && (
-                        <div className="flex space-x-3">
-                          <Button variant="outline" className="border-border text-foreground hover:bg-muted">
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Event
-                          </Button>
-                          <Button variant="destructive" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                            <Trash className="w-4 h-4 mr-2" />
-                            Delete Event
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
               )}
             </div>
           </div>
@@ -663,7 +608,7 @@ function App() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <Button 
           variant="ghost" 
-          onClick={() => setCurrentPage('home')}
+          onClick={goBack}
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -816,7 +761,7 @@ function App() {
               <div className="flex justify-end space-x-3">
                 <Button 
                   variant="outline"
-                  onClick={() => setCurrentPage('home')}
+                  onClick={goBack}
                   className="border-border text-foreground hover:bg-muted"
                 >
                   Cancel
@@ -1195,7 +1140,6 @@ function App() {
   return (
     <div className="min-h-screen bg-background">
       <PrimaryNavbar />
-      <SecondaryNavbar />
       {renderPage()}
     </div>
   );
