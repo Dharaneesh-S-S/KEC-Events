@@ -195,7 +195,7 @@ function App() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentPage('home')}>
-            <div className="w-8 h-8 bg-primary text-primary-foreground rounded flex items-center justify-center font-bold">
+            <div className="w-8 h-8 bg-brand-blue text-white rounded flex items-center justify-center font-bold">
               KE
             </div>
             <span className="text-xl font-semibold text-foreground">KEC Events</span>
@@ -207,13 +207,13 @@ function App() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
               placeholder="Search Events..." 
-              className="pl-10"
+              className="pl-10 bg-muted/50 border-none focus-visible:ring-brand-blue"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-32 bg-muted/50 border-none focus:ring-brand-blue focus:ring-offset-0">
               <SelectValue placeholder="Sort by..." />
             </SelectTrigger>
             <SelectContent>
@@ -226,33 +226,33 @@ function App() {
 
         <div className="flex items-center space-x-4">
           {!user ? (
-            <Button onClick={() => setCurrentPage('login')} className="bg-primary hover:bg-primary/90">
+            <Button onClick={() => setCurrentPage('login')} className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground">
               <LogIn className="w-4 h-4 mr-2" />
               Login
             </Button>
           ) : (
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground">
                 <Bell className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground">
                 <Phone className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-muted hover:text-foreground">
                 <Home className="w-4 h-4" />
               </Button>
               <div className="flex items-center space-x-2">
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={user.avatar} />
-                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-muted text-foreground">{user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium">{user.name}</span>
+                <span className="text-sm font-medium text-foreground">{user.name}</span>
               </div>
               <Button 
                 variant="destructive" 
                 size="sm"
                 onClick={() => setUser(null)}
-                className="bg-destructive hover:bg-destructive/90"
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
@@ -297,7 +297,7 @@ function App() {
     const navItems = getNavItems();
 
     return (
-      <nav className="bg-muted border-b border-border px-4 py-2">
+      <nav className="bg-card border-b border-border px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center space-x-6">
           {navItems.map((item) => (
             <button
@@ -306,7 +306,7 @@ function App() {
               className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 currentPage === item.page
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <item.icon className="w-4 h-4" />
@@ -328,7 +328,7 @@ function App() {
           className="w-full h-48 object-cover"
         />
         {event.isFree && (
-          <Badge className="absolute top-2 right-2 bg-green-500 hover:bg-green-600">
+          <Badge className="absolute top-2 right-2 bg-primary hover:bg-primary/90 text-primary-foreground">
             Free
           </Badge>
         )}
@@ -361,11 +361,7 @@ function App() {
               setSelectedEvent(event);
               setCurrentPage('event-details');
             }}
-            className={`${
-              user?.role === 'student' 
-                ? 'bg-primary hover:bg-primary/90' 
-                : 'bg-secondary hover:bg-secondary/90 text-secondary-foreground'
-            }`}
+            className={`bg-primary hover:bg-primary/90 text-primary-foreground`}
           >
             {user?.role === 'student' ? 'Register Now' : 'View Details'}
           </Button>
@@ -402,15 +398,15 @@ function App() {
   // Login Page
   const LoginPage = () => (
     <div className="min-h-screen flex">
-      <div className="flex-1 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 flex items-center justify-center p-8">
-        <div className="text-center text-white max-w-md">
+      <div className="flex-1 bg-gradient-to-br from-brand-blue via-brand-purple to-brand-dark-blue flex items-center justify-center p-8">
+        <div className="text-center text-primary-foreground max-w-md">
           <h1 className="text-4xl font-bold mb-6">Welcome to KEC Fests</h1>
           <p className="text-xl mb-8">
             Discover amazing events and connect with your college community
           </p>
           <Button 
             variant="outline" 
-            className="bg-transparent border-white text-white hover:bg-white hover:text-blue-600"
+            className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-brand-blue"
           >
             Don't have an account? →
           </Button>
@@ -420,8 +416,8 @@ function App() {
       <div className="flex-1 flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogIn className="w-8 h-8 text-blue-600" />
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogIn className="w-8 h-8 text-primary" />
             </div>
             <CardTitle className="text-2xl">Sign In</CardTitle>
             <p className="text-muted-foreground">Access your account to manage events</p>
@@ -568,7 +564,7 @@ function App() {
                         className="w-full h-64 object-cover rounded-t-lg"
                       />
                       {selectedEvent.isFree && (
-                        <Badge className="absolute top-4 right-4 bg-green-500 hover:bg-green-600">
+                        <Badge className="absolute top-4 right-4 bg-primary hover:bg-primary/90 text-primary-foreground">
                           Free
                         </Badge>
                       )}
@@ -631,7 +627,7 @@ function App() {
                       {user?.role === 'student' && (
                         <Button 
                           onClick={() => setShowRegistrationForm(true)}
-                          className="bg-primary hover:bg-primary/90"
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         >
                           <ExternalLink className="w-4 h-4 mr-2" />
                           Register Now
@@ -640,11 +636,11 @@ function App() {
 
                       {(user?.role === 'club' || user?.role === 'admin') && (
                         <div className="flex space-x-3">
-                          <Button variant="outline">
+                          <Button variant="outline" className="border-border text-foreground hover:bg-muted">
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Event
                           </Button>
-                          <Button variant="destructive">
+                          <Button variant="destructive" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                             <Trash className="w-4 h-4 mr-2" />
                             Delete Event
                           </Button>
@@ -821,10 +817,11 @@ function App() {
                 <Button 
                   variant="outline"
                   onClick={() => setCurrentPage('home')}
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   Cancel
                 </Button>
-                <Button className="bg-primary hover:bg-primary/90">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   <FileText className="w-4 h-4 mr-2" />
                   Create Event
                 </Button>
@@ -855,7 +852,7 @@ function App() {
                   className="w-full h-40 object-cover"
                 />
                 {event.isFree && (
-                  <Badge className="absolute top-2 right-2 bg-green-500">
+                  <Badge className="absolute top-2 right-2 bg-primary hover:bg-primary/90 text-primary-foreground">
                     Free
                   </Badge>
                 )}
@@ -879,10 +876,10 @@ function App() {
                 <div className="flex items-center justify-between">
                   <Badge variant="secondary">{event.category}</Badge>
                   <div className="flex space-x-2">
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-muted">
                       <Edit className="w-3 h-3" />
                     </Button>
-                    <Button size="sm" variant="destructive">
+                    <Button size="sm" variant="destructive" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                       <Trash className="w-3 h-3" />
                     </Button>
                   </div>
@@ -965,7 +962,7 @@ function App() {
                   />
                 </div>
                 <Button 
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   onClick={() => {
                     if (newClub.name && newClub.email) {
                       const club: Club = {
@@ -1009,17 +1006,18 @@ function App() {
                           <TableCell className="font-medium">{club.name}</TableCell>
                           <TableCell>{club.email}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{club.department}</Badge>
+                            <Badge variant="outline" className="border-border text-foreground">{club.department}</Badge>
                           </TableCell>
                           <TableCell>{club.description || '-'}</TableCell>
                           <TableCell>{club.createdDate}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button size="sm" variant="outline">Edit</Button>
+                              <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-muted">Edit</Button>
                               <Button 
                                 size="sm" 
                                 variant="destructive"
                                 onClick={() => setClubs(prev => prev.filter(c => c.id !== club.id))}
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                               >
                                 Delete
                               </Button>
@@ -1110,7 +1108,7 @@ function App() {
                   </div>
                 </div>
                 <Button 
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   onClick={() => {
                     if (newStaff.name && newStaff.email) {
                       const staffMember: Staff = {
@@ -1152,11 +1150,12 @@ function App() {
                           <TableCell>{member.department}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button size="sm" variant="outline">Edit</Button>
+                              <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-muted">Edit</Button>
                               <Button 
                                 size="sm" 
                                 variant="destructive"
                                 onClick={() => setStaff(prev => prev.filter(s => s.id !== member.id))}
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                               >
                                 Delete
                               </Button>
