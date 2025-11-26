@@ -157,14 +157,7 @@ const Navbar = ({
                 </button>
 
                 <button
-                  onClick={() => {
-                    if (user?.role === 'club') {
-                      navigate('');
-                      navigate('client/src/pages/contactpage.jsx');
-                    } else {
-                      navigate('client/src/pages/contactpage.jsx');
-                    }
-                  }}
+                  onClick={() => navigate('/contacts')}
                   className="p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                   title="Contacts"
                 >

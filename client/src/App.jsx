@@ -33,7 +33,7 @@ import AdminLayout from './components/admin/AdminLayout';
 
 // Misc Pages
 import HomePage from './pages/misc/HomePage';
-import ContactsPage from './pages/misc/ContactsPage';
+import ContactPage from './pages/contactpage';
 import UnauthorizedPage from './pages/misc/UnauthorizedPage';
 import NotFoundPage from './pages/misc/NotFoundPage';
 
@@ -57,7 +57,7 @@ function AppRoutes() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
-        <Route path="/contacts" element={<ContactsPage />} />
+        <Route path="/contacts" element={<ContactPage />} />
 
         {/* Student Routes */}
         <Route
