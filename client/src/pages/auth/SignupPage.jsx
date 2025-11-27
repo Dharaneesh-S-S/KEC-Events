@@ -301,3 +301,23 @@ function SignupPage() {
 }
 
 export default SignupPage;
+
+
+// import React from "react";
+// import "./AuthStyles.css";
+
+// export default function SignupPage({ toggle }) {
+//   return (
+//     <div className="form-box signup-box">
+//       <h2>Signup</h2>
+//       <input type="text" placeholder="Full Name" />
+//       <input type="email" placeholder="Email" />
+//       <input type="text" placeholder="Department" />
+//       <input type="text" placeholder="Year" />
+//       <input type="password" placeholder="Password" />
+//       <input type="password" placeholder="Confirm Password" />
+//       <button className="btn">Register</button>
+//       <p className="switch-text">Already have an account? <span onClick={toggle}>Login</span></p>
+//     </div>
+//   );
+// }

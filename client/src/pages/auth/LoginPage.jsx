@@ -199,3 +199,19 @@ function LoginPage() {
 }
 
 export default LoginPage;
+
+
+// import React from "react";
+// import "./AuthStyles.css";
+
+// export default function LoginPage({ toggle }) {
+//   return (
+//     <div className="form-box login-box">
+//       <h2>Login</h2>
+//       <input type="text" placeholder="Email / Name" />
+//       <input type="password" placeholder="Password" />
+//       <button className="btn">Login</button>
+//       <p className="switch-text">Don't have an account? <span onClick={toggle}>Signup</span></p>
+//     </div>
+//   );
+// }

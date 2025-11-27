@@ -1,0 +1,91 @@
+/* Container */
+.container {
+  width: 850px;
+  height: 500px;
+  background: #fff;
+  border-radius: 15px;
+  display: flex;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  transition: 0.6s ease-in-out;
+}
+
+/* Form Box */
+.form-box {
+  width: 50%;
+  padding: 40px;
+  position: absolute;
+  height: 100%;
+  transition: 0.6s ease-in-out;
+}
+
+.login-box {
+  left: 0;
+  opacity: 1;
+}
+
+.signup-box {
+  left: 50%;
+  opacity: 0;
+}
+
+.container.signup-mode .login-box {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.container.signup-mode .signup-box {
+  transform: translateX(-100%);
+  opacity: 1;
+}
+
+/* Inputs */
+.form-box input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+}
+
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 12px;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  background: #007bff;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+/* Switch Text */
+.switch-text {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.switch-text span {
+  color: #007bff;
+  cursor: pointer;
+}
+
+/* Right Side Image */
+.image-box {
+  width: 50%;
+  height: 100%;
+  right: 0;
+  position: absolute;
+  background-image: url("sample.jpg");
+  background-size: cover;
+  background-position: center;
+  transition: 0.6s ease-in-out;
+}
+
+.container.signup-mode .image-box {
+  transform: translateX(-100%);
+}
