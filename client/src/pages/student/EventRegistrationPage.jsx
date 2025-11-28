@@ -210,7 +210,6 @@ export default function EventRegistrationPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Available Events</h2>
-                  <p className="text-sm text-gray-600 mt-1">Select an event to view details</p>
                 </div>
                 <button
                   onClick={() => setSidebarCollapsed((s) => !s)}
@@ -271,7 +270,7 @@ export default function EventRegistrationPage() {
             {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Event Registration</h1>
-              <p className="text-xl text-gray-600">Register for exciting college events</p>
+        
             </div>
 
             <div className="grid grid-cols-1 gap-8">
@@ -279,11 +278,20 @@ export default function EventRegistrationPage() {
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
                 {/* Poster Gallery */}
                 <div className="relative">
-                  {/* Top area: poster left, main details right */}
-                      <div className="flex flex-col md:flex-row">
-                          <div className="md:w-1/2 w-full flex-shrink-0">
-                            <div className="p-6 md:p-8">{/* inset so poster doesn't touch card border */}
-                              <div className="relative w-full h-96 md:h-96 rounded-lg overflow-hidden shadow-sm bg-white">
+                  {/* Event title (moved to top) */}
+                  <div className="px-6 py-6 border-b">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedEvent?.title}</h2>
+                    {selectedEvent?.eventType && (
+                      <div className="mt-2">
+                        <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium">{selectedEvent.eventType} Event</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Top area: poster left */}
+                  <div className="flex flex-col md:flex-row items-stretch">
+                    <div className="md:w-1/2 w-full p-6 md:p-8 flex-shrink-0">
+                      <div className="relative w-full rounded-lg overflow-hidden shadow-sm bg-white h-96 md:h-96">
                         {posterUrl ? (
                           <>
                             <img src={posterUrl} alt={selectedEvent.title} className="w-full h-full object-cover" />
@@ -309,23 +317,9 @@ export default function EventRegistrationPage() {
                             <ImageIcon className="w-16 h-16 text-gray-400" />
                           </div>
                         )}
-                        </div>
                       </div>
                     </div>
 
-                    <div className="md:flex-1 md:pl-6 w-full flex items-center">
-                      <div>
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium capitalize">{selectedEvent.eventType} Event</span>
-                        </div>
-                        <h1 className="text-3xl font-bold mb-2 text-gray-900 leading-tight">{selectedEvent.title}</h1>
-                        <div className="text-sm text-gray-700 space-y-1">
-                          <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-gray-500" />{selectedEvent.date ? new Date(selectedEvent.date).toLocaleDateString() : 'TBA'}</div>
-                          <div className="flex items-center mt-1"><MapPin className="w-4 h-4 mr-2 text-gray-500" />{selectedEvent.venue || 'Venue TBA'}</div>
-                        </div>
-                        <p className="mt-4 text-gray-600 hidden md:block">{selectedEvent.description}</p>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Rest of details below the poster */}
@@ -334,78 +328,10 @@ export default function EventRegistrationPage() {
                       <p className="text-gray-600">{selectedEvent.description}</p>
                     </div>
 
-                    {/* Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                      {[
-                        { icon: Clock, label: "Time", val: selectedEvent.time || "To be announced" },
-                        { icon: MapPin, label: "Venue", val: selectedEvent.venue || 'TBA' },
-                        { icon: Users, label: "Participants", val: `${selectedEvent.participantsCount || 0} registered` },
-                      ].map((row) => {
-                        const Icon = row.icon;
-                        return (
-                          <div key={row.label} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                            <div className="flex-shrink-0">
-                              <Icon className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500 font-medium">{row.label}</p>
-                              <p className="text-base font-semibold text-gray-900">{row.val}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {/* Info grid removed (time/venue/participants) */}
                   </div>
 
-                  {/* Tags */}
-                  {selectedEvent.tags && (
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold mb-4 flex items-center">
-                        <Tag className="w-5 h-5 mr-2 text-blue-600" /> Event Tags
-                      </h3>
-
-                      {(() => {
-                        let cleanTags = selectedEvent.tags;
-
-                        // If value is already array → do nothing
-                        if (Array.isArray(cleanTags)) {
-                          return (
-                            <div className="flex flex-wrap gap-2">
-                              {cleanTags.map((tag, idx) => (
-                                <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium">
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          );
-                        }
-
-                        // 💥 If value is string but has escaped quotes → fix it
-                        if (typeof cleanTags === "string") {
-                          try {
-                            // Convert escaped JSON string → usable array
-                            cleanTags = JSON.parse(cleanTags.replace(/\\"/g, '"'));
-                          } catch {
-                            // fallback: remove brackets & split by comma
-                            cleanTags = cleanTags.replace(/[\[\]\s"]/g, "").split(",");
-                          }
-                        }
-
-                        return (
-                          <div className="flex flex-wrap gap-2">
-                            {cleanTags.map((tag, idx) => (
-                              <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium">
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-
-
+                  {/* Event tags removed from registration view */}
 
                   {/* Parent Event */}
                   {selectedEvent.parentEvent && (

@@ -16,7 +16,7 @@ function ImageWrapper({ posterUrl, title, isFree }) {
   const aspect = isPortrait ? "210/297" : "297/210";
 
   return (
-    <div className="relative w-full transform translate-x-2 translate-y-2" style={{ aspectRatio: aspect }}>
+    <div className="relative w-full" style={{ aspectRatio: aspect }}>
       {posterUrl ? (
         <>
           <img
@@ -42,15 +42,15 @@ function ImageWrapper({ posterUrl, title, isFree }) {
 const EventCard = ({ event, onRegister, isAuthenticated = false }) => {
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200">
-      <div className="flex flex-col md:flex-row items-stretch">
-        {/* Left: Poster */}
-        <div className="w-full md:w-72 flex-shrink-0 bg-blue-100 overflow-visible">
+      <div className="flex flex-col items-stretch">
+        {/* Poster (top) */}
+        <div className="w-full flex-shrink-0 bg-blue-100">
           {/* Enforce A4 orientations: landscape (297/210) or portrait (210/297) */}
           <ImageWrapper posterUrl={event.posters?.[0]?.url} title={event.title} isFree={event.isFree} />
         </div>
 
-        {/* Right: Details */}
-        <div className="p-6 flex-1">
+        {/* Details (below poster) */}
+        <div className="p-6">
           <div className="flex items-start justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-900 leading-tight flex-1 mr-3">
               {event.title}
