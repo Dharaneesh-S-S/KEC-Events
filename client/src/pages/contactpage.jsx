@@ -1,31 +1,60 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Contacts } from '../data/Contacts';
 
 const ContactPage = () => {
 	const [query, setQuery] = useState('');
-	const [grade, setGrade] = useState('all');
+	const [menu, setMenu] = useState({ id: null, type: null }); // {id, type: 'phone'|'email'}
+	const [copied, setCopied] = useState(null);
 
-	const gradeOptions = useMemo(() => {
-		const setGrades = new Set();
-		Contacts.forEach((c) => {
-			if (c.designation) setGrades.add(c.designation);
-		});
-		return ['All', ...Array.from(setGrades)];
+	const sanitizePhone = (p) => (p || '').toString().replace(/[^0-9+]/g, '');
+	const isMobileCandidate = (p) => {
+		const s = sanitizePhone(p).replace(/^\+/, '');
+		return s.length === 10; // simple heuristic: 10-digit numbers treated as mobile
+	};
+
+	const toggleMenu = (id, type, e) => {
+		if (e) e.stopPropagation();
+		setMenu((m) => (m && m.id === id && m.type === type ? { id: null, type: null } : { id, type }));
+	};
+
+	const closeMenu = () => setMenu({ id: null, type: null });
+
+	const copyToClipboard = async (text) => {
+		try {
+			await navigator.clipboard.writeText(text);
+			setCopied(text);
+			setTimeout(() => setCopied(null), 1500);
+			closeMenu();
+		} catch (err) {
+			console.warn('Copy failed', err);
+		}
+	};
+
+	// Close menus when clicking anywhere outside
+	useEffect(() => {
+		const handler = () => closeMenu();
+		document.addEventListener('click', handler);
+		return () => document.removeEventListener('click', handler);
 	}, []);
 
 	const filtered = Contacts.filter((c) => {
-		const q = query.trim().toLowerCase();
+		const raw = query.trim();
+		if (!raw) return true;
 
-		// Grade filter
-		if (grade !== 'all' && c.designation !== grade) return false;
+		// Support comma-separated tokens (AND semantics): every token must match at least one field
+		const tokens = raw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
 
-		if (!q) return true;
-		return (
-			c.name.toLowerCase().includes(q) ||
-			c.department.toLowerCase().includes(q) ||
-			(c.designation && c.designation.toLowerCase().includes(q))
-		);
+		return tokens.every((token) => {
+			return (
+				(c.name && c.name.toLowerCase().includes(token)) ||
+				(c.department && c.department.toLowerCase().includes(token)) ||
+				(c.designation && c.designation.toLowerCase().includes(token)) ||
+				(c.cabin && c.cabin.toLowerCase().includes(token)) ||
+				(c.email && c.email.toLowerCase().includes(token)) ||
+				(c.phone && c.phone.toLowerCase().includes(token))
+			);
+		});
 	});
 
 	return (
@@ -38,47 +67,65 @@ const ContactPage = () => {
 						type="search"
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Search staff..."
-						className="w-full sm:w-1/2 px-4 py-3 rounded shadow-sm border bg-white focus:outline-none"
+						placeholder="Search staff (comma-separated, e.g. 'CSE, Professor')"
+						className="w-full px-4 py-3 rounded shadow-sm border bg-white focus:outline-none"
 					/>
-
-					<div className="w-full sm:w-1/4">
-						<label className="sr-only">Grade</label>
-						<select
-							value={grade}
-							onChange={(e) => setGrade(e.target.value)}
-							className="w-full px-4 py-3 rounded shadow-sm border bg-white focus:outline-none"
-						>
-							{gradeOptions.map((g) => (
-								<option key={g} value={g === 'All' ? 'all' : g}>
-									{g}
-								</option>
-							))}
-						</select>
-					</div>
 				</div>
 
-				<div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+				<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
 					{filtered.map((contact) => (
-						<div key={contact.id} className="bg-white shadow-md rounded-lg p-6 flex gap-6 items-center">
+						<div key={contact.id} className="bg-white shadow-md rounded-lg p-4 flex gap-4 items-center hover:bg-blue-50 hover:shadow-lg transition-colors duration-200">
 							{/* Left: photo with phone below */}
 							<div className="flex flex-col items-center flex-shrink-0">
 								<img
 									src={contact.photo}
 									alt={contact.name}
-									className="w-36 h-36 object-cover rounded-md"
+									className="w-24 h-24 object-cover rounded-full"
 								/>
-								<p className="mt-3 text-sm text-gray-700"><span className="font-bold">Phone:</span> {contact.phone}</p>
+								<div className="mt-2 text-sm text-gray-700 relative">
+									<button onClick={(e) => toggleMenu(contact.id, 'phone', e)} className="hover:underline">
+										<span className="font-bold">Phone:</span>&nbsp;{contact.phone}
+									</button>
+
+										{menu.id === contact.id && menu.type === 'phone' && (
+										<div onClick={(e) => e.stopPropagation()} className="absolute left-0 mt-2 w-44 bg-white border rounded shadow-md p-2 z-20">
+											{isMobileCandidate(contact.phone) ? (
+												<a href={`tel:${sanitizePhone(contact.phone)}`} className="block px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">Call</a>
+											) : null}
+											<button onClick={() => copyToClipboard(contact.phone)} className="w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">Copy Number</button>
+										</div>
+									)}
+								</div>
 							</div>
 
 							{/* Right: details, with email and phone on same line at the end */}
 							<div className="flex-1">
-								<h2 className="text-2xl font-semibold mb-2">{contact.name}</h2>
-								<p className="mb-1"><span className="font-bold">Designation:</span> {contact.designation}</p>
-								<p className="mb-1"><span className="font-bold">Room:</span> {contact.cabin}</p>
-								<p className="mb-1"><span className="font-bold">Department:</span> {contact.department}</p>
-								<p className="mb-1"><span className="font-bold">Grade:</span> {contact.designation}</p>
-								<p className="mb-1"><span className="font-bold">Gmail :</span>{contact.email}</p>
+								<h2 className="text-xl font-semibold mb-1">{contact.name}</h2>
+								<p className="mb-1 text-sm"><span className="font-bold">Designation:</span> {contact.designation}</p>
+								<p className="mb-1 text-sm"><span className="font-bold">Room:</span> {contact.cabin}</p>
+								<p className="mb-1 text-sm"><span className="font-bold">Department:</span> {contact.department}</p>
+
+								<div className="flex items-center gap-4 mt-2">
+									<div className="relative">
+										<button
+											onClick={(e) => toggleMenu(contact.id, 'email', e)}
+											className="text-sm text-gray-700 hover:underline"
+										>
+											<span className="font-bold">Email:</span>&nbsp;{contact.email}
+										</button>
+
+										{menu.id === contact.id && menu.type === 'email' && (
+											<div onClick={(e) => e.stopPropagation()} className="absolute z-20 right-0 mt-2 w-44 bg-white border rounded shadow-md p-2">
+												<a href={`mailto:${contact.email}`} className="block px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">Send Mail</a>
+												<button onClick={() => copyToClipboard(contact.email)} className="w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">Copy Email</button>
+											</div>
+										)}
+									</div>
+								</div>
+
+								{copied === contact.email || copied === contact.phone ? (
+									<p className="mt-2 text-xs text-green-600">Copied!</p>
+								) : null}
 							</div>
 						</div>
 					))}
