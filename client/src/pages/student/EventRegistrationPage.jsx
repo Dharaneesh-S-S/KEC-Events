@@ -257,7 +257,6 @@ export default function EventRegistrationPage() {
                     </div>
                     <div className="mt-3 flex items-center justify-between">
                       <span className="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1.5 rounded-full font-medium">{ev.eventType || 'event'}</span>
-                      <span className="text-xs text-gray-500">👁 {ev.views || 0}</span>
                     </div>
                   </div>
                 ))
@@ -275,71 +274,87 @@ export default function EventRegistrationPage() {
               <p className="text-xl text-gray-600">Register for exciting college events</p>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 gap-8">
               {/* Event Details */}
-              <div className="xl:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
                 {/* Poster Gallery */}
                 <div className="relative">
-                  {posterUrl ? (
-                    <>
-                      <img src={posterUrl} alt={selectedEvent.title} className="w-full h-96 object-cover" />
+                  {/* Top area: poster left, main details right */}
+                      <div className="flex flex-col md:flex-row">
+                          <div className="md:w-1/2 w-full flex-shrink-0">
+                            <div className="p-6 md:p-8">{/* inset so poster doesn't touch card border */}
+                              <div className="relative w-full h-96 md:h-96 rounded-lg overflow-hidden shadow-sm bg-white">
+                        {posterUrl ? (
+                          <>
+                            <img src={posterUrl} alt={selectedEvent.title} className="w-full h-full object-cover" />
 
-                      {selectedEvent.posters && selectedEvent.posters.length > 1 && (
-                        <>
-                          <button onClick={prevPoster} className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg transition-all duration-200">
-                            <ChevronLeft className="w-5 h-5" />
-                          </button>
-                          <button onClick={nextPoster} className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg transition-all duration-200">
-                            <ChevronRight className="w-5 h-5" />
-                          </button>
-                          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 bg-white/80 px-3 py-2 rounded-full shadow-md">
-                            {selectedEvent.posters.map((_, idx) => (
-                              <button key={idx} onClick={() => setActivePoster(idx)} className={`w-3 h-3 rounded-full transition-all ${idx === activePoster ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`} />
-                            ))}
+                            {selectedEvent.posters && selectedEvent.posters.length > 1 && (
+                              <>
+                                <button onClick={prevPoster} className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg transition-all duration-200">
+                                  <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <button onClick={nextPoster} className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-2 shadow-lg transition-all duration-200">
+                                  <ChevronRight className="w-5 h-5" />
+                                </button>
+                                <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2 bg-white/80 px-3 py-2 rounded-full shadow-md">
+                                  {selectedEvent.posters.map((_, idx) => (
+                                    <button key={idx} onClick={() => setActivePoster(idx)} className={`w-3 h-3 rounded-full transition-all ${idx === activePoster ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`} />
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <div className="w-full h-64 md:h-full bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+                            <ImageIcon className="w-16 h-16 text-gray-400" />
                           </div>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <div className="w-full h-96 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-                      <ImageIcon className="w-16 h-16 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium capitalize">{selectedEvent.eventType} Event</span>
-                        <span className="bg-gray-100 text-gray-800 text-sm px-3 py-1 rounded-full font-medium">👁 {selectedEvent.views || 0} views</span>
+                        )}
+                        </div>
                       </div>
-                      <h1 className="text-4xl font-bold mb-4 text-gray-900 leading-tight">{selectedEvent.title}</h1>
-                      <p className="text-lg text-gray-600 leading-relaxed">{selectedEvent.description}</p>
+                    </div>
+
+                    <div className="md:flex-1 md:pl-6 w-full flex items-center">
+                      <div>
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium capitalize">{selectedEvent.eventType} Event</span>
+                        </div>
+                        <h1 className="text-3xl font-bold mb-2 text-gray-900 leading-tight">{selectedEvent.title}</h1>
+                        <div className="text-sm text-gray-700 space-y-1">
+                          <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-gray-500" />{selectedEvent.date ? new Date(selectedEvent.date).toLocaleDateString() : 'TBA'}</div>
+                          <div className="flex items-center mt-1"><MapPin className="w-4 h-4 mr-2 text-gray-500" />{selectedEvent.venue || 'Venue TBA'}</div>
+                        </div>
+                        <p className="mt-4 text-gray-600 hidden md:block">{selectedEvent.description}</p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Info Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    {[
-                      { icon: Calendar, label: "Event Date", val: selectedEvent.date ? new Date(selectedEvent.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'TBA' },
-                      { icon: Clock, label: "Time", val: selectedEvent.time || "To be announced" },
-                      { icon: MapPin, label: "Venue", val: selectedEvent.venue || 'TBA' },
-                      { icon: Users, label: "Participants", val: `${selectedEvent.participantsCount || 0} registered` },
-                    ].map((row) => {
-                      const Icon = row.icon;
-                      return (
-                        <div key={row.label} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                          <div className="flex-shrink-0">
-                            <Icon className="w-6 h-6 text-blue-600" />
+                  {/* Rest of details below the poster */}
+                  <div className="p-8 pt-6">
+                    <div className="md:hidden mb-4">
+                      <p className="text-gray-600">{selectedEvent.description}</p>
+                    </div>
+
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                      {[
+                        { icon: Clock, label: "Time", val: selectedEvent.time || "To be announced" },
+                        { icon: MapPin, label: "Venue", val: selectedEvent.venue || 'TBA' },
+                        { icon: Users, label: "Participants", val: `${selectedEvent.participantsCount || 0} registered` },
+                      ].map((row) => {
+                        const Icon = row.icon;
+                        return (
+                          <div key={row.label} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                            <div className="flex-shrink-0">
+                              <Icon className="w-6 h-6 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500 font-medium">{row.label}</p>
+                              <p className="text-base font-semibold text-gray-900">{row.val}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm text-gray-500 font-medium">{row.label}</p>
-                            <p className="text-base font-semibold text-gray-900">{row.val}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Tags */}
@@ -403,13 +418,12 @@ export default function EventRegistrationPage() {
               </div>
 
               {/* Registration Panel */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 sticky top-24 h-fit">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 h-fit">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <ExternalLink className="w-8 h-8 text-blue-600" />
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Register Now</h2>
-                  <p className="text-gray-600">Secure your spot for this exciting event</p>
                 </div>
 
                 {selectedEvent.formEmbedCode ? (
@@ -427,10 +441,6 @@ export default function EventRegistrationPage() {
                   </div>
                 ) : selectedEvent.formLink ? (
                   <div className="space-y-4">
-                    <div className="bg-gray-100 rounded-xl p-4 text-center">
-                      <p className="text-sm text-gray-600 mb-2">Registration Form</p>
-                      <p className="text-xs text-gray-500">Fill out the form to complete your registration</p>
-                    </div>
 
                     <iframe src={selectedEvent.formLink} className="w-full h-96 rounded-xl border-2 border-gray-200" title="Registration Form"></iframe>
 
